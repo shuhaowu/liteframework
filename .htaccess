@@ -1,0 +1,18 @@
+<FilesMatch "\.php$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+<FilesMatch "index[0-9]?\.php$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+Options +FollowSymLinks
+Options +Indexes
+
+RewriteEngine On
+RewriteBase /
+
+RewriteCond %{SCRIPT_FILENAME} !-f
+RewriteCond %{SCRIPT_FILENAME} !-d
+RewriteRule (.*) index.php?page=$1 [QSA,L]
