@@ -12,5 +12,6 @@
 <p>Error Message: <?php echo $error[1]; ?></p>
 <p><a href="javascript:history.go(-1)">Go back</a></p>
 <?php $page->render("debug", FRAMEWORK_DIR . "/errors/debug.php"); ?>
+<p>Powered by <a href="https://github.com/ultimatebuster/liteframework">liteFramework</a></p>
 </body>
 </html>

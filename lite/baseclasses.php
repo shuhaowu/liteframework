@@ -67,6 +67,7 @@ class BaseController{
 	
 	/**
 	 * Should be overwritten if the developer needs extra things to be set after __construct (which is final).
+	 * Here you can hook into the functions to execute pre-render, or any other things you need to setup.
 	 */
 	function init(){}
 	

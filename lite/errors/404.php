@@ -10,5 +10,6 @@
 <p>The url, <a href="<?php echo $page->currentURL();?>"><?php echo $page->currentURL(); ?></a>, cannot be found on our server. It might be deleted from our server or you've clicked on a bad link.</p>
 <p><a href="javascript:history.go(-1)">Go back</a></p>
 <?php $page->render("debug", FRAMEWORK_DIR . "/errors/debug.php"); ?>
+<p>Powered by <a href="https://github.com/ultimatebuster/liteframework">liteFramework</a></p>
 </body>
 </html>

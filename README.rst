@@ -1,18 +1,17 @@
-liteFramework
-=============
+liteFramework 0.5.2.0
+=====================
 
 liteFramework is a simple PHP framework that allows one to easily program in PHP
-with minimum learning curve and maximum efficiency. The framework is broken down
-into 3 different sections:
+with minimum learning curve and maximum efficiency. This version of the 
+framework does not support database interactions. In order to access that you
+have to code your own system.
 
- # Model
- # View
- # Controllers
+If you're using PHP 5.3 and above, please use the latest version of 
+liteFramework. This version is severely out of date and will only get features
+as demanded or bug fixes.
 
-As of right now, the model is incomplete. The source for that system will be
-pushed in the next couple of weeks.
+This framework has been tested only on PHP 5.2
 
-The documentations are not all done yet. I'm still trying to document all of the
-functions.
+To start, edit the index.php file and follow the tutorial on the wiki.
 
-There will be examples soon.
+Documentations are found in the docs folder

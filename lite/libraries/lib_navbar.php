@@ -20,9 +20,9 @@ class LiteSTDLib_Navbar{
 	protected $type;
 	protected $linkstyle;
 	/**
-	 * Enter description here ...
-	 * @param unknown_type $navbarfile
-	 * @param unknown_type $currentPage
+	 * Creates an new instance of the navbar.
+	 * @param string $navbarfile The location to the navbar xml file.
+	 * @param string $currentPage The current page name, so the navbar generator can figure out what the current page is and add the active.
 	 */
 	public function __construct($navbarfile, $currentPage){
 		$this->currentPage = $currentPage;
@@ -35,6 +35,10 @@ class LiteSTDLib_Navbar{
 		$this->linkstyle = $this->decodeAttr($this->xml['linkstyle']);
 	}
 	
+	/**
+	 * Generates the HTML accordings to the xml file specifications.
+	 * @return string The HTML of the navbar. 
+	 */
 	public function html(){
 		$type = $this->type['tag'];
 		if (!$type) $type = 'root';
