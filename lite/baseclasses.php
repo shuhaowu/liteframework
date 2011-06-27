@@ -1,41 +1,42 @@
 <?php
+namespace lite;
 
 /**
  * Contains the base classes for inheriting.
  * @author Shuhao Wu <shuhao@shuhaowu.com>
  * @copyright Copyright (c) 2011, Shuhao Wu
- * @package baseclasses
+ * @package lite
  */
 
 /**
  * Exception is thrown when something is trying to be initialized again.
  * @author Shuhao Wu
- * @package baseclasses
+ * @package lite
  */
-class AlreadyInitializedError extends Exception {}
+class AlreadyInitializedError extends \Exception {}
 
 
 /**
  * Base controller class. A couple of shortcut functions.
  * @author Shuhao Wu
- * @package baseclasses
+ * @package lite
  */
 class BaseController{
 	/**
 	 * The controller base class that provides a couple of simple functions.
-	 * @var LiteRenderer
-	 * @see LiteRenderer
+	 * @var \lite\renderer\Renderer
 	 */
 	private $renderer;
 	private $helper;
 	
 	/**
-	 * Initializes the controller. This method may not be overwritten. Use init() instead. It will be called right after the object is initialized.
+	 * Initializes the controller. This method may not be overwritten. Use 
+	 * init() instead. It will be called right after the object is initialized.
 	 * @param UltiRenderer $renderer The renderer instance.
 	 * @param Helper $helper The helper instance.
 	 * @see init()
 	 */
-	final function __construct($renderer, $helper){
+	public final function __construct($renderer, $helper){
 		$this->renderer = $renderer;
 		$this->helper = $helper;
 	}
@@ -50,33 +51,40 @@ class BaseController{
 	}
 	
 	/**
-	 * The index function. Should be overwritten in order to do something in the homepage.
-	 * @param array $args The args are given by the dispatcher. /index/something/something will give the args of array('something', 'something'). However. /something/something will not.
+	 * The index function. Should be overwritten in order to do something in the
+	 * homepage.
+	 * @param array $args The args are given by the dispatcher. 
+	 * /index/something/something will give the args of 
+	 * array('something', 'something'). However. /something/something will not.
 	 */
-	function index($args=array()){
+	public function index($args=array()){
 		$this->render('index');
 	}
 	
 	/**
 	 * Function that's executed before the rendering processes.
-	 * @param array $functions An array of function names (in string) under the Helper class. 
+	 * @param array $functions An array of function names (in string) under the 
+	 * Helper class. 
 	 */
 	protected function addFunctionsToPreRender(array $functions){
-		$this->renderer->preRenderFunctions = array_unique(array_merge($this->renderer->preRenderFunctions, $functions));
+		$this->renderer->preRenderFunctions = array_unique(
+				array_merge($this->renderer->preRenderFunctions, $functions));
 	}
 	
 	/**
-	 * Should be overwritten if the developer needs extra things to be set after __construct (which is final).
-	 * Here you can hook into the functions to execute pre-render, or any other things you need to setup.
+	 * Should be overwritten if the developer needs extra things to be set 
+	 * after __construct (which is final). Here you can hook into the functions 
+	 * to execute pre-render, or any other things you need to setup.
 	 */
-	function init(){}
+	public function init(){}
 	
 	/**
-	 * Shortcut function that buffers the output, requires a page, then return and cleans the output.
+	 * Shortcut function that buffers the output, requires a page, then return 
+	 * and cleans the output.
 	 * @param string $path Path to the page
 	 * @return string Whatever that's echoed from the $path.
 	 */
-	function parse($path){
+	public function parse($path){
 		ob_start();
 		require $path;
 		return ob_get_clean();
@@ -89,7 +97,9 @@ class BaseController{
 	 * @param string $debugmessage The debug message
 	 * @param array $args Used to construct the page var. Key=>value array.
 	 */
-	function error($errorcode, $errormessage, $debugmessage='', array $args=array()){
+	public function error($errorcode, $errormessage, $debugmessage='', 
+						  array $args=array()){
+		
 		$page = $this->renderer->createPageVar($args);
 		$error = array($errorcode, $errormessage, $debugmessage);
 		$this->renderer->renderError($error, $page);
@@ -97,7 +107,8 @@ class BaseController{
 }
 
 /**
- * Base helper class. These are functions that are both available for the view AND the controller.
+ * Base helper class. These are functions that are both available for the view 
+ * AND the controller.
  * @author Shuhao Wu
  * @package baseclasses
  */
@@ -109,7 +120,8 @@ class BaseHelper{
 	 */
 	function __construct(){
 		if (self::$instance){
-			throw new AlreadyInitializedError("There's already an instance of the BaseHelper");
+			throw new AlreadyInitializedError(
+					"There's already an instance of the BaseHelper");
 		}
 		self::$instance = $this;
 	}
@@ -133,5 +145,4 @@ class BaseHelper{
 		return $out[0];
 	}
 }
-
 ?>

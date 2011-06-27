@@ -3,6 +3,9 @@
 require_once './lite/baseclasses.php';
 require_once './lite/commons.php';
 
+use \lite;
+use \lite\Renderer;
+
 /* Global Variable Listings
  * $requestURL
  */
@@ -31,24 +34,23 @@ if(!class_exists('Helper')){
 }
 
 // Import third party libraries
-LiteCommons::importLibraries($lib_location);
-LiteCommons::importLibraries(FRAMEWORK_DIR . '/libraries');
+lite\importLibraries($lib_location);
+lite\importLibraries(lite\FRAMEWORK_DIR . '/libraries');
 
 // Sets up database if $use_db is true.
 if (isset($use_db) && $use_db){
-	$driver = LiteCommons::arrayGet($dbinfo, 'driver');
-	try{
-		$driverClass = new ReflectionClass("LiteORM_{$driver}Driver");
-	} catch (ReflectionException $e){
-		throw new LiteORM_DriverNotFound("Driver $driver is not found! Check if class LiteORM_{$driver}Driver exists");
-	}
+	$driver = lite\arrayGet($dbinfo, 'driver', '');
 	
-	$database = LiteCommons::arrayGet($dbinfo, 'database');
-	$username = LiteCommons::arrayGet($dbinfo, 'username');
-	$password = LiteCommons::arrayGet($dbinfo, 'password');
-	$host = LiteCommons::arrayGet($dbinfo, 'host');
-	$prefix = LiteCommons::arrayGet($dbinfo, 'prefix');
-	$dbdriver = $driverClass->newInstance($database, $username, $password, $host, $prefix);
+	$database = lite\arrayGet($dbinfo, 'database', '');
+	$username = lite\arrayGet($dbinfo, 'username', '');
+	$password = lite\arrayGet($dbinfo, 'password', '');
+	$host = lite\arrayGet($dbinfo, 'host', '');
+	$prefix = lite\arrayGet($dbinfo, 'prefix', '');
+	
+	$driverClass = "\\lite\\orm\\drivers\\$driver";
+	if (class_exists($driverClass)){
+		$dbdriver = new $driverClass();
+	}
 	
 	// Cleanup global scope. Yay 'Garbage' collection.
 	unset($database);
@@ -61,7 +63,8 @@ if (isset($use_db) && $use_db){
 
 // Initializes components
 $helper = new Helper();
-$renderer = new LiteRenderer($views_location, $helper, $template_location, $errors_location, DEBUG);
+$renderer = new Renderer($views_location, $helper, $template_location, 
+						 $errors_location, DEBUG);
 $controllers = new Controllers($renderer, $helper);
 $controllers->init();
 
@@ -77,7 +80,8 @@ foreach ($url_map as $pattern=>$controller){
 if (method_exists($controllers, $name)){
 	$controllers->$name($args);
 } else {
-	$controllers->error(404, 'Controller Not Found', "Controller $name is not found");
+	$controllers->error(404, 'Controller Not Found', 
+						"Controller $name is not found");
 }
 
 ?>

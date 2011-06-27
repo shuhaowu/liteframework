@@ -2,16 +2,17 @@
 /**
  * This is a navbar generator given a XML file.
  * @author Shuhao Wu <shuhao@shuhaowu.com>
- * @package stdlib
+ * @package \lite\stdlib
  */
+namespace lite\stdlib;
 
 /**
  * Generates a navbar with very customizable setting given a XML file. 
  * Currently only supports flat navbars
  * @author Shuhao Wu <shuhao@shuhaowu.com>
- * @package stdlib
+ * @package \lite\stdlib
  */
-class LiteSTDLib_Navbar{
+class Navbar{
 	protected $xml;
 	protected $active;
 	protected $textwrap;
@@ -22,12 +23,13 @@ class LiteSTDLib_Navbar{
 	/**
 	 * Creates an new instance of the navbar.
 	 * @param string $navbarfile The location to the navbar xml file.
-	 * @param string $currentPage The current page name, so the navbar generator can figure out what the current page is and add the active.
+	 * @param string $currentPage The current page name, so the navbar generator
+	 * can figure out what the current page is and add the active.
 	 */
 	public function __construct($navbarfile, $currentPage){
 		$this->currentPage = $currentPage;
 		$this->xml = file_get_contents($navbarfile);
-		$this->xml = new SimpleXMLElement($this->xml);
+		$this->xml = new \SimpleXMLElement($this->xml);
 		$this->active = $this->decodeAttr($this->xml['active']);
 		$this->textwrap = $this->decodeAttr($this->xml['textwrap']);
 		$this->linkwrap = $this->decodeAttr($this->xml['linkwrap']);
@@ -42,7 +44,7 @@ class LiteSTDLib_Navbar{
 	public function html(){
 		$type = $this->type['tag'];
 		if (!$type) $type = 'root';
-		$html = new SimpleXMLElement("<$type></$type>");
+		$html = new \SimpleXMLElement("<$type></$type>");
 		$this->addAttr($this->type['attr'], $html);
 		
 		foreach ($this->xml->link as $link){
@@ -55,7 +57,8 @@ class LiteSTDLib_Navbar{
 				$linkwrap = $html->addChild($this->linkwrap['tag']);
 				$this->addAttr($this->linkwrap['attr'], $linkwrap);
 			} else {
-				// Get a reference of the $html as the linkwrap to avoid code duplication
+				// Get a reference of the $html as the linkwrap to avoid code 
+				// duplication
 				$linkwrap = &$html;
 			}
 			
@@ -90,6 +93,7 @@ class LiteSTDLib_Navbar{
 		$html = $html->asXML();
 		if ($type == 'root'){
 			// Kill the <root> and </root>
+			// Hacked way to so.
 			$html = substr($html, 28, strlen($html) - 36);
 		} else {
 			$html = substr($html, 22);
