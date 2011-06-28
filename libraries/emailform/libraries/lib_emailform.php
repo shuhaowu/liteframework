@@ -7,6 +7,7 @@
  * @copyright Copyright (c) 2011, Shuhao Wu
  * @package emailform
  */
+
 class EmailForm{	
 	
 	const FAILURE = -1;

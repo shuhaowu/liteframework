@@ -20,38 +20,33 @@ class BasePropertyType{
 	 * @var string 
 	 */
 	public $type;
-	protected $default = null;
-	protected $required = false;
-	protected $validator = false;
+	public $default = null;
+	public $required = false;
+	public $validator = false;
+	
+	private static $things = array('default', 'required', 'validator');
 	
 	/**
 	 * Creates a new property object.
 	 * @param array $param Parameters to be passed in. 
 	 * It's a key=>value dictionary with the key of 'default', '
-	 * required', and 'validator'
+	 * required', and 'validator'. 'validator' should point to an anonymous
+	 * function. 'required' should point to a boolean. 'default' points to the
+	 * default value.
 	 */
-	public function __construct(array $param){		
-		$things = array('default', 'required', 'validator');
-		foreach ($things as $var){
+	public function __construct(array $param=array()){		
+		foreach (self::$things as $var){
 			if (array_key_exists($var, $param)) $this->$var = $param[$var];
 		}
 	}
 	
+	/**
+	 * Validates the value given a validator.
+	 * @param mixed $value A value to validate.
+	 */
 	public function validate($value){
 		return $this->validator($value);
 	}
-	
-	public function createValueObject($value){
-		if ($this->validate($value)){
-			$type = $this->type;
-			$cls = "\\lite\\orm\\{$type}";
-			return new $cls;
-		} else {
-			return false;
-		}
-	}
-	
-	
 }
 
 ?>

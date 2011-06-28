@@ -39,9 +39,11 @@ class Navbar{
 	
 	/**
 	 * Generates the HTML accordings to the xml file specifications.
+	 * @param boolean $strict If set to true, it matches the entire
+	 * $page->getName() or else it only matches the first part before a '/'.
 	 * @return string The HTML of the navbar. 
 	 */
-	public function html(){
+	public function html($strict=TRUE){
 		$type = $this->type['tag'];
 		if (!$type) $type = 'root';
 		$html = new \SimpleXMLElement("<$type></$type>");
@@ -52,6 +54,7 @@ class Navbar{
 			$name = (string) $link->name;
 			$text = (string) $link->text;
 			$href = (string) $link->href;
+			
 			// Check if there's a link wrap.
 			if ($this->linkwrap['tag']){
 				$linkwrap = $html->addChild($this->linkwrap['tag']);
@@ -81,8 +84,13 @@ class Navbar{
 					$a[$attr->getName()] = (string) $attr; 
 				}
 			}
+			$currentPage = $this->currentPage;
+			if (!$strict){
+				$currentPage = explode('/', $currentPage, 2);
+				$currentPage = $currentPage[0]; 
+			}
 			
-			if ($this->currentPage == $name){
+			if ($currentPage == $name){
 				// $var could, and should, either be 'a' or 'textwrap'
 				$var = $this->active['tag'];
 				$this->addAttr($this->active['attr'], $$var);
@@ -101,8 +109,8 @@ class Navbar{
 		return $html;
 	}
 	
-	protected function addAttr($attr, &$node){
-		foreach ($attr as $attr=>$value) $node[$attr] = $value;
+	protected function addAttr($attribute, &$node){
+		foreach ($attribute as $attr=>$value) $node[$attr] = $value;
 	}
 	
 	protected function decodeAttr($value){

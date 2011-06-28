@@ -7,7 +7,7 @@
  */
 
 namespace lite\orm;
-
+use \lite;
 /**
  * This is the class of errors that corresponds to an invalid key.
  * @package \lite\orm
@@ -21,8 +21,10 @@ class InvalidKeyError extends \Exception {}
 class DriverNotFound extends \Exception {}
 
 $filepath = dirname(__FILE__);
-require_once($filepath . "/orm/model.class.php");
-
+require_once($filepath . '/orm/properties.class.php');
+require_once($filepath . '/orm/model.class.php');
+require_once($filepath . '/orm/db.interface.php');
+lite\importLibraries($filepath . '/orm/drivers', 'driver.');
 unset($filepath);
 
 ?>

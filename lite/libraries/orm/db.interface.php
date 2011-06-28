@@ -14,11 +14,7 @@ namespace lite\orm\drivers;
  * @package \lite\orm\drivers
  */
 abstract class ResultRows implements \Iterator{
-	abstract public function current();
-	abstract public function key()
-	abstract public function next()
-	abstract public function rewind()
-	abstract public function valid() 
+	
 }
 
 
@@ -57,11 +53,13 @@ interface DatabaseDriver{
 	 * @param string $tablename the name of the table
 	 */
 	public function insert($tablename, $values);
-	public function update($tablename, $values, $id=NULL);
-	public function delete($tablename, $id);
+	public function update($tablename, $values, $key);
+	public function delete($tablename, $key);
 	public function replace($tablename, $values);
-	public function directaccess($args=array());
-	public function select($conditions, $limit=1000, $orderby=null);
+	public function directaccess(); // must use func_get_args();
+	// Need a better implementation
+	// public function select($tablename, $conditions, $limit=1000, $orderby=null);
+	// public function get($tablename, $key);
 }
 
 class DatabaseNotFound extends \Exception {}

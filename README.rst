@@ -11,4 +11,4 @@ php52_support and download those, or download the versions (in tags) tagged with
 v0.5.2.x. The PHP 5.2 framework doesn't have a model component as it's too
 difficult to develop for.
 
-Documentation comming soon.
+Documentation coming soon.
