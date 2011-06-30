@@ -2,7 +2,8 @@
 namespace lite\orm\drivers;
 use SQLite3;
 
-use \lite\orm\BasePropertyType;
+use \lite\orm\types\StringProperty;
+use \lite\orm\types\Types;
 
 /**
  * The driver of the SQLite.
@@ -12,29 +13,25 @@ use \lite\orm\BasePropertyType;
  */
 class SQLite implements DatabaseDriver{
 	private $database;
-	private $prefix;
 	private $db = null;
+	public $returnSQL = false;
+	
 
-
-	public static function getType($propertytype){
+	public static function getType(&$propertytype){
 		switch ($propertytype->type){
-			case 'string':
+			case Types::STRING: case Types::STRING_LIST: 
+			case Types::REFERENCE:	case Types::REFERENCES_COLLECTION:
 				return \SQLITE3_TEXT;
 			break;
-			case 'float':
+			case Types::FLOAT:
 				return \SQLITE3_FLOAT;
 			break;
-			case 'blob':
+			case Types::BLOB:
 				return \SQLITE3_BLOB;
 				break;
-			case 'int':
+			case Types::INTEGER: case Types::BOOLEAN:
+			case Types::DATETIME:
 				return \SQLITE3_INTEGER;
-			break;
-			case 'stringarray':
-				return \SQLITE3_TEXT;
-			break;
-			case '':
-				
 			break;
 
 			default:
@@ -42,12 +39,11 @@ class SQLite implements DatabaseDriver{
 		}
 	}
 
-	public function __construct($database, $username, $password, $host, $prefix){
-		if (!file_exists($database)){
+	public function __construct($database, $username, $password, $host){
+		if (!file_exists($database) && $database != ':memory:'){
 			throw new DatabaseNotFound("$database cannot be found!");
 		}
 		$this->database = $database;
-		$this->prefix = $prefix;
 	}
 
 	public function connect(){
@@ -63,20 +59,28 @@ class SQLite implements DatabaseDriver{
 	}
 
 
-	private function bindValuesToStatements(&$values, &$stmt){
+	private function bindParamsToStatements(&$values, &$stmt){
 		$i = 1;
-		foreach ($values as $key => $value){
-			$stmt->bindValue($i, $value[0], self::getType($value[1]));
+		foreach ($values as $value){
+			$stmt->bindParam($i, $value[0], self::getType($value[1]));
 			$i++;
 		}
 	}
 	
 	private function prepBindExecute($sql, &$values){
+		if ($this->returnSQL) return $sql;
+		
 		$stmt = $this->db->prepare($sql);
-		$this->bindValuesToStatements($values, $stmt);
+		$this->bindParamsToStatements($values, $stmt);
 		
 		$result = $stmt->execute();
-		return !!$result;
+		$errcode = $this->db->lastErrorCode();
+		if ($errcode){
+			throw new DatabaseError($this->db->lastErrorMsg(), 
+									$errcode);
+		} else {
+			return $this->db->changes();
+		}
 	}
 
 
@@ -91,8 +95,7 @@ class SQLite implements DatabaseDriver{
 
 		// Populate the values
 		$sql .= '(?' . str_repeat(', ?', $len-1) . ')';
-
-		return $this->prepBindExecute($sql, $values);
+		return $this->prepBindExecute($sql, array_values($values));
 	}
 
 
@@ -107,26 +110,68 @@ class SQLite implements DatabaseDriver{
 		$sql = substr($sql, 0, -2);
 		
 		// WHERE key = ?
-		$sql .= "WHERE key = ?";
+		$sql .= " WHERE key = ?";
 		
 		$values['key'] = array($key, new StringProperty());
-		
-		return $this->prepBindExecute($sql, $values);
+		return $this->prepBindExecute($sql, array_values($values));
 	}
 	
 	
 	public function delete($tablename, $key){
-		$sql = "DELETE FROM $tablename WHERE key=?";
-		$values = array($key, new StringProperty());
+		$sql = "DELETE FROM $tablename WHERE key = ?";
+		$values = array(array($key, new StringProperty()));
 		return $this->prepBindExecute($sql, $values);
 	}
 	
-	public function replace($tablename, $values){
+	
+	public function replace($tablename, $values, $key){
+		$sql = "INSERT OR REPLACE INTO $tablename ";
+		$columns = array_keys($values);
+
+		$len = count($columns); // Get the length of the columns.
+
+		// Populate the columns.
+		$sql .= '(key, ' . implode(', ', $columns) . ') VALUES '; 
+
+		// Populate the values
+		$sql .= '(?' . str_repeat(', ?', $len) . ')';
 		
+		$values = array_values($values);
+		array_unshift($values, array($key, new StringProperty()));
+		return $this->prepBindExecute($sql, $values);
 	}
 	
 	public function directaccess(){
+		$args = func_get_args();
+		$sql = array_shift($args);
+		$stmt = $this->db->prepare($sql);
+		$this->bindParamsToStatements($args, $stmt);
 		
+		$result = $stmt->execute();
+		return array($result, $this->db->changes(), $this->db->lastErrorMsg());
+	}
+	
+	public function filter($tablename, $columns, $args, $flag=Flags::F_AND){
+		$sql = 'SELECT ' . implode(', ', $columns) . " FROM $tablename";
+		$len = count($args);
+		if ($len > 0){
+			switch($flag){
+				case Flags::F_AND:
+					$operator = 'AND';
+				break;
+				case Flags::F_OR:
+					$operator = 'OR';
+				break;
+			}
+			
+			$sql .= ' WHERE';
+			$i = 1;
+			foreach ($args as $column => $value){
+				$sql .= " $column = ? ";
+				if ($i != $len) $sql .= $operator;
+				$i++;
+			}
+		}
 	}
 	
 	// Missing select...

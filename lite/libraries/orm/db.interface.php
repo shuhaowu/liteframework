@@ -17,6 +17,10 @@ abstract class ResultRows implements \Iterator{
 	
 }
 
+class Flags{
+	const F_AND = 1;
+	const F_OR = 2;
+}
 
 /**
  * This interface shows all the appropriate variables and functions a class that
@@ -31,10 +35,9 @@ interface DatabaseDriver{
 	 * @param string $database Database name
 	 * @param string $username Username to connect
 	 * @param string $password Password for connecting
-	 * @param string $prefix Database table prefix
 	 * @param string $host Hostname
 	 */
-	public function __construct($database, $username, $password, $host, $prefix);
+	public function __construct($database, $username, $password, $host);
 	
 	/**
 	 * Connects to the database.
@@ -55,13 +58,17 @@ interface DatabaseDriver{
 	public function insert($tablename, $values);
 	public function update($tablename, $values, $key);
 	public function delete($tablename, $key);
-	public function replace($tablename, $values);
+	
+	// Per database implementation on the most effective one.
+	public function replace($tablename, $values, $key);
 	public function directaccess(); // must use func_get_args();
+	public function filter($tablename, $columns, $args, $flag=Flags::F_AND);
+	// public function exclude($tablename, $values, $flag=Flags::F_AND);
 	// Need a better implementation
 	// public function select($tablename, $conditions, $limit=1000, $orderby=null);
 	// public function get($tablename, $key);
 }
 
 class DatabaseNotFound extends \Exception {}
-
+class DatabaseError extends \Exception {}
 ?>

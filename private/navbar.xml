@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<navbar active="a;class:current" textwrap="span" linkwrap="li" type="ul">
+<!-- 
+The active attributes means which element to customize the active link.
+The ; seperates the tag from the attributes in HTML. : is the equal sign.
+So a;class:current will become <a class="current">
+This notation can be used with textwrap, active, linkwrap, and type.
+
+Type is the type of navbar (table... ul, any html tags)
+Linkwrap is to wrap the <a> elements
+Textwrap is to wrap the text (in this case): So <a href="/somelocation"><span>Text</span></a>
+
+Thos navbar will generate, assuming the current page is index (of course, in 1 line instead of prettified)
+
+<ul>
+	<li><a href="/" class="current"><span>Home</span></a></li>
+	<li><a href="/about"><span>About Me</span></a></li>
+	<li><a href="/showcase"><span>Showcase</span></a></li>
+	<li><a href="/blog"><span>Blog</span></a></li>
+	<li><a href="/contact"><span>Contact</span></a></li>
+</ul>
+ -->
+	<link>
+		<name>index</name>
+		<text>Home</text>
+		<href>/</href>
+	</link>
+	
+	<link>
+		<name>about</name>
+		<text>About Me</text>
+		<href>/about</href>
+	</link>
+	
+	<link>
+		<name>showcase</name>
+		<text>Showcase</text>
+		<href>/showcase</href>
+	</link>
+	
+	<link>
+		<name>blog</name>
+		<text>Blog</text>
+		<href>/blog</href>
+	</link>
+	
+	<link>
+		<name>contact</name>
+		<text>Contact</text>
+		<href>/contact</href>
+	</link>
+</navbar>

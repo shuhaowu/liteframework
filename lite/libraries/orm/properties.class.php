@@ -6,7 +6,19 @@
  * @package \lite\orm
  */
 
-namespace lite\orm;
+namespace lite\orm\types;
+
+class Types{
+	const STRING = 0;
+	const INTEGER = 1;
+	const FLOAT = 2;
+	const BLOB = 3;
+	const STRING_LIST = 4;
+	const BOOLEAN = 5;
+	const REFERENCE = 6;
+	const REFERENCES_COLLECTION = 7;
+	const DATETIME = 8;
+}
 
 /**
  * The base property type that everything else extended from.
@@ -49,4 +61,39 @@ class BasePropertyType{
 	}
 }
 
+class StringProperty extends BasePropertyType{
+	public $type = Types::STRING;
+}
+
+class IntegerProperty extends BasePropertyType{
+	public $type = Types::INTEGER;
+}
+
+class FloatProperty extends BasePropertyType{
+	public $type = Types::FLOAT;
+}
+
+class BlobProperty extends BasePropertyType{
+	public $type = Types::BLOB;
+}
+
+class StringListProperty extends BasePropertyType{
+	public $type = Types::STRING_LIST;
+}
+
+class BooleanProperty extends BasePropertyType{
+	public $type = Types::BOOLEAN;
+}
+
+class ReferenceProperty extends BasePropertyType{
+	public $type = Types::REFERENCE;
+}
+
+class ReferencesCollectionProperty extends BasePropertyType{
+	public $type = Types::REFERENCES_COLLECTION;
+}
+
+class DateTimeProperty extends BasePropertyType{
+	public $type = Types::DATETIME;
+}
 ?>
