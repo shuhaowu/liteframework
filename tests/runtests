@@ -1,3 +1,0 @@
-#!/bin/sh
-phpunit --verbose SQLite3DriverTest sqlite.test.php
-phpunit --verbose SQLite3SQLTest sqlite.test.php

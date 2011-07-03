@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit verbose="true" strict="true">
+	<testsuites>
+		<testsuite name="SQLite3DriverTests">
+			<file>sqlite3/SQLite3DriverTests.php</file>
+			<file>sqlite3/SQLite3CommandGenerationTests.php</file>
+		</testsuite>
+	</testsuites>
+</phpunit>

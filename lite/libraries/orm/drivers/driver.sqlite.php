@@ -5,6 +5,41 @@ use SQLite3;
 use \lite\orm\types\StringProperty;
 use \lite\orm\types\Types;
 
+class SQLiteResultRows extends ResultRows{
+	private $result;
+	private $position = 0;
+	private $currentRow;
+	public function __construct($result){
+		$this->result = $result;
+		$this->position = 0;
+		$this->currentRow = null;
+	}
+	
+	public function current(){
+		return $this->currentRow;
+	}
+	
+	public function key(){
+		return $this->position;
+	}
+	
+	public function next(){
+		$this->position++;
+		$this->currentRow = $this->result->fetchArray(\SQLITE3_ASSOC);
+	}
+	
+	public function rewind(){
+		$this->position = 0;
+		$this->result->reset();
+		$this->currentRow = $this->result->fetchArray(\SQLITE3_ASSOC);
+	}
+	
+	public function valid(){
+		return !!$this->currentRow;
+	}
+}
+
+
 /**
  * The driver of the SQLite.
  *
@@ -15,7 +50,7 @@ class SQLite implements DatabaseDriver{
 	private $database;
 	private $db = null;
 	public $returnSQL = false;
-	
+	private $stmt = null;
 
 	public static function getType(&$propertytype){
 		switch ($propertytype->type){
@@ -49,7 +84,7 @@ class SQLite implements DatabaseDriver{
 	public function connect(){
 		if (!$this->db){
 			$this->db = new SQLite3($this->database);
-		} 
+		}
 	}
 
 	public function disconnect(){
@@ -57,7 +92,6 @@ class SQLite implements DatabaseDriver{
 			return $this->db->close();
 		}
 	}
-
 
 	private function bindParamsToStatements(&$values, &$stmt){
 		$i = 1;
@@ -67,7 +101,11 @@ class SQLite implements DatabaseDriver{
 		}
 	}
 	
-	private function prepBindExecute($sql, &$values){
+	public function __destruct(){
+		$this->disconnect();
+	}
+	
+	private function prepBindExecute($sql, &$values, $returnResult=false){
 		if ($this->returnSQL) return $sql;
 		
 		$stmt = $this->db->prepare($sql);
@@ -75,10 +113,11 @@ class SQLite implements DatabaseDriver{
 		
 		$result = $stmt->execute();
 		$errcode = $this->db->lastErrorCode();
+		
 		if ($errcode){
-			throw new DatabaseError($this->db->lastErrorMsg(), 
-									$errcode);
+			throw new DatabaseError($this->db->lastErrorMsg(), $errcode);
 		} else {
+			if ($returnResult) return $result;
 			return $this->db->changes();
 		}
 	}
@@ -151,27 +190,46 @@ class SQLite implements DatabaseDriver{
 		return array($result, $this->db->changes(), $this->db->lastErrorMsg());
 	}
 	
-	public function filter($tablename, $columns, $args, $flag=Flags::F_AND){
+	private function selectSQL($tablename, $columns,
+							   $args, $sign, $orderby=false,
+							   $limit=1000, $offset=0,
+							   $flag=Flags::F_AND){
+	
 		$sql = 'SELECT ' . implode(', ', $columns) . " FROM $tablename";
 		$len = count($args);
 		if ($len > 0){
 			switch($flag){
 				case Flags::F_AND:
 					$operator = 'AND';
-				break;
+					break;
 				case Flags::F_OR:
 					$operator = 'OR';
-				break;
+					break;
 			}
 			
 			$sql .= ' WHERE';
 			$i = 1;
 			foreach ($args as $column => $value){
-				$sql .= " $column = ? ";
+				$sql .= " $column $sign ? ";
 				if ($i != $len) $sql .= $operator;
 				$i++;
 			}
 		}
+		if ($orderby) $sql .= "ORDER BY $orderby ";
+		$sql .= "LIMIT $limit, $offset";
+		return $sql;
+	}
+	
+	public function filter($tablename, $columns, 
+						   $args, $orderby=false, 
+						   $limit=1000, $offset=0, 
+						   $flag=Flags::F_AND){
+		
+		$sql = $this->selectSQL($tablename, $columns, $args, '=', $orderby, 
+								$limit, $offset, $flag);
+		if ($this->returnSQL) return $sql;
+		$result = $this->prepBindExecute($sql, $args, true);
+		return new SQLiteResultRows($result);
 	}
 	
 	// Missing select...
