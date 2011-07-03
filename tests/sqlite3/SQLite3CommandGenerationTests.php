@@ -82,13 +82,13 @@ class SQLite3CommandGenerationTests extends PHPUnit_Framework_TestCase{
 			'sometable', array('column1', 'column2'), 
 			array('key'=>'somekey', 'mew' => 24), 'ASC'));
 		
-		$this->assertEquals('SELECT column1, column2 FROM sometable WHERE key = ? AND mew = ? ORDER BY ASC LIMIT 1000, 0', $sql);
+		$this->assertEquals('SELECT column1, column2 FROM sometable WHERE key = ? AND mew = ? ORDER BY ASC LIMIT 0, 1000', $sql);
 		
 		$sql = trim($this->driver->filter(
 					'sometable', array('column1', 'column2'), 
 					array('key'=>'somekey', 'mew' => 24)));
 		
-		$this->assertEquals('SELECT column1, column2 FROM sometable WHERE key = ? AND mew = ? LIMIT 1000, 0', $sql);
+		$this->assertEquals('SELECT column1, column2 FROM sometable WHERE key = ? AND mew = ? LIMIT 0, 1000', $sql);
 	}
 }
 ?>

@@ -111,6 +111,7 @@ class SQLite implements DatabaseDriver{
 		$stmt = $this->db->prepare($sql);
 		$this->bindParamsToStatements($values, $stmt);
 		
+		
 		$result = $stmt->execute();
 		$errcode = $this->db->lastErrorCode();
 		
@@ -216,7 +217,7 @@ class SQLite implements DatabaseDriver{
 			}
 		}
 		if ($orderby) $sql .= "ORDER BY $orderby ";
-		$sql .= "LIMIT $limit, $offset";
+		$sql .= "LIMIT $offset, $limit";
 		return $sql;
 	}
 	
