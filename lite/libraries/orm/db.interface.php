@@ -44,8 +44,8 @@ interface DatabaseDriver{
 	public function replace($tablename, $values, $key);
 	public function directaccess(); // must use func_get_args();
 	public function filter($tablename, $columns, 
-						   $args, $orderby=false, 
-						   $limit=1000, $offset=0, 
+						   $args, $limit=1000, $offset=0,
+						   $ordercolumn=false, $order=false,
 						   $flag=Flags::F_AND);
 	// public function exclude($tablename, $values, $flag=Flags::F_AND);
 	// Need a better implementation

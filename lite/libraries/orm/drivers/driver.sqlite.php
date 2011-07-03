@@ -191,10 +191,10 @@ class SQLite implements DatabaseDriver{
 		return array($result, $this->db->changes(), $this->db->lastErrorMsg());
 	}
 	
-	private function selectSQL($tablename, $columns,
-							   $args, $sign, $orderby=false,
-							   $limit=1000, $offset=0,
-							   $flag=Flags::F_AND){
+	private function selectSQL($tablename, $columns, 
+						   	  $args, $sign, $limit=1000, 
+						   	  $offset=0, $ordercolumn=false, 
+						   	  $order=false, $flag=Flags::F_AND){
 	
 		$sql = 'SELECT ' . implode(', ', $columns) . " FROM $tablename";
 		$len = count($args);
@@ -206,6 +206,8 @@ class SQLite implements DatabaseDriver{
 				case Flags::F_OR:
 					$operator = 'OR';
 					break;
+				default:
+					throw new \Exception("Not a valid flag: $flag");
 			}
 			
 			$sql .= ' WHERE';
@@ -216,23 +218,39 @@ class SQLite implements DatabaseDriver{
 				$i++;
 			}
 		}
-		if ($orderby) $sql .= "ORDER BY $orderby ";
+		if ($ordercolumn && $order) $sql .= "ORDER BY $ordercolumn $order ";
 		$sql .= "LIMIT $offset, $limit";
 		return $sql;
 	}
 	
-	public function filter($tablename, $columns, 
-						   $args, $orderby=false, 
-						   $limit=1000, $offset=0, 
+	public function select($tablename, $columns, 
+						   $args, $sign, $limit=1000, $offset=0,
+						   $ordercolumn=false, $order=false,
 						   $flag=Flags::F_AND){
+		$sql = $this->selectSQL($tablename, $columns, $args, $sign, $limit,
+								$offset, $ordercolumn, $order, $flag);
 		
-		$sql = $this->selectSQL($tablename, $columns, $args, '=', $orderby, 
-								$limit, $offset, $flag);
 		if ($this->returnSQL) return $sql;
 		$result = $this->prepBindExecute($sql, $args, true);
 		return new SQLiteResultRows($result);
 	}
 	
-	// Missing select...
+	public function filter($tablename, $columns, 
+						   $args, $limit=1000, $offset=0,
+						   $ordercolumn=false, $order=false,
+						   $flag=Flags::F_AND){
+		
+		return $this->select($tablename, $columns, $args, '=', $limit, $offset,
+							 $ordercolumn, $order, $flag);
+	}
+	
+	public function exclude($tablename, $columns,
+						   $args, $limit=1000, $offset=0,
+						   $ordercolumn=false, $order=false,
+						   $flag=Flags::F_AND){
+	
+		return $this->select($tablename, $columns, $args, '!=', $limit, $offset,
+		$ordercolumn, $order, $flag);
+	}
 }
 ?>

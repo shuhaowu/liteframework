@@ -80,15 +80,29 @@ class SQLite3CommandGenerationTests extends PHPUnit_Framework_TestCase{
 	public function testFilter(){
 		$sql = trim($this->driver->filter(
 			'sometable', array('column1', 'column2'), 
-			array('key'=>'somekey', 'mew' => 24), 'ASC'));
+			array('key'=>'somekey', 'mew' => 24), 1000, 0, 'mew', 'ASC'));
 		
-		$this->assertEquals('SELECT column1, column2 FROM sometable WHERE key = ? AND mew = ? ORDER BY ASC LIMIT 0, 1000', $sql);
+		$this->assertEquals('SELECT column1, column2 FROM sometable WHERE key = ? AND mew = ? ORDER BY mew ASC LIMIT 0, 1000', $sql);
 		
 		$sql = trim($this->driver->filter(
 					'sometable', array('column1', 'column2'), 
 					array('key'=>'somekey', 'mew' => 24)));
 		
 		$this->assertEquals('SELECT column1, column2 FROM sometable WHERE key = ? AND mew = ? LIMIT 0, 1000', $sql);
+	}
+	
+	public function testExclude(){
+		$sql = trim($this->driver->exclude(
+					'sometable', array('column1', 'column2'), 
+		array('key'=>'somekey', 'mew' => 24), 1000, 0, 'mew', 'ASC'));
+		
+		$this->assertEquals('SELECT column1, column2 FROM sometable WHERE key != ? AND mew != ? ORDER BY mew ASC LIMIT 0, 1000', $sql);
+		
+		$sql = trim($this->driver->exclude(
+							'sometable', array('column1', 'column2'), 
+		array('key'=>'somekey', 'mew' => 24)));
+		
+		$this->assertEquals('SELECT column1, column2 FROM sometable WHERE key != ? AND mew != ? LIMIT 0, 1000', $sql);
 	}
 }
 ?>
