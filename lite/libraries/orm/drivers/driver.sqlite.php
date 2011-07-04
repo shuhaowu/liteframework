@@ -252,5 +252,10 @@ class SQLite implements DatabaseDriver{
 		return $this->select($tablename, $columns, $args, '!=', $limit, $offset,
 		$ordercolumn, $order, $flag);
 	}
+	
+	public function get($tablename, $columns, $key){
+		$args = array('key' => array($key, new StringProperty()));
+		return $this->select($tablename, $columns, $args, '=', 1);
+	}
 }
 ?>

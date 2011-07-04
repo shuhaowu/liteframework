@@ -57,6 +57,7 @@ class BasePropertyType{
 	 * @param mixed $value A value to validate.
 	 */
 	public function validate($value){
+		if (!$this->validate) return true; 
 		return $this->validator($value);
 	}
 }

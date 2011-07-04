@@ -47,10 +47,13 @@ interface DatabaseDriver{
 						   $args, $limit=1000, $offset=0,
 						   $ordercolumn=false, $order=false,
 						   $flag=Flags::F_AND);
-	// public function exclude($tablename, $values, $flag=Flags::F_AND);
-	// Need a better implementation
-	// public function select($tablename, $conditions, $limit=1000, $orderby=null);
-	// public function get($tablename, $key);
+	
+	public function exclude($tablename, $columns,
+							$args, $limit=1000, $offset=0,
+							$ordercolumn=false, $order=false,
+							$flag=Flags::F_AND);
+	
+	public function get($tablename, $columns, $key);
 }
 
 class DatabaseNotFound extends \Exception {}

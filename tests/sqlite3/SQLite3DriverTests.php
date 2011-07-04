@@ -133,13 +133,28 @@ class SQLite3DriverTests extends PHPUnit_Framework_TestCase{
 											'key' => array('theotherkey', new types\StringProperty()))
 		);
 		
-		$columns = array('mewvalue', 'moovalue', 'lolvalue', 'key');
+		$columns = array('mewvalue', 'lolvalue', 'key');
 		$args = array('mewvalue' => array(25, new types\IntegerProperty()));
 		$results = $this->driver->exclude('multitable', $columns, $args);
 		$i = 0;
 		foreach ($results as $row){
 			$this->assertEquals(24, $row['mewvalue']);
-			$this->assertEquals(3.14, $row['moovalue']);
+			$this->assertEquals(false, array_key_exists('moovalue', $row));
+			$this->assertEquals('wtf', $row['lolvalue']);
+			$this->assertEquals(self::KEY, $row['key']);
+			$i++;
+		}
+		$this->assertEquals(1, $i);
+	}
+	
+	public function testGet(){
+		$this->insertSomeDataz();
+		$columns = array('mewvalue', 'lolvalue', 'key');
+		$rows = $this->driver->get('multitable', $columns, self::KEY);
+		$i = 0;
+		foreach ($rows as $row){
+			$this->assertEquals(24, $row['mewvalue']);
+			$this->assertEquals(false, array_key_exists('moovalue', $row));
 			$this->assertEquals('wtf', $row['lolvalue']);
 			$this->assertEquals(self::KEY, $row['key']);
 			$i++;

@@ -104,5 +104,10 @@ class SQLite3CommandGenerationTests extends PHPUnit_Framework_TestCase{
 		
 		$this->assertEquals('SELECT column1, column2 FROM sometable WHERE key != ? AND mew != ? LIMIT 0, 1000', $sql);
 	}
+	
+	public function testGet(){
+		$sql = trim($this->driver->get('sometable', array('column1', 'column2'), 'lolkey'));
+		$this->assertEquals('SELECT column1, column2 FROM sometable WHERE key = ? LIMIT 0, 1', $sql);
+	}
 }
 ?>
