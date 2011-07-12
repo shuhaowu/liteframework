@@ -60,6 +60,15 @@ class BasePropertyType{
 		if (!$this->validate) return true; 
 		return $this->validator($value);
 	}
+
+	/**
+	 * Construct a SQL friendly value.
+	 * @param mixed $value A value to construct.
+	 * @return string the SQL friendly string will be returned.
+	 */
+	public function sqlValue($value){
+		return $value;
+	}
 }
 
 class StringProperty extends BasePropertyType{
@@ -80,6 +89,9 @@ class BlobProperty extends BasePropertyType{
 
 class StringListProperty extends BasePropertyType{
 	public $type = Types::STRING_LIST;
+	public function sqlValue($value){
+		return implode(';', $value);
+	}
 }
 
 class BooleanProperty extends BasePropertyType{
@@ -90,7 +102,7 @@ class ReferenceProperty extends BasePropertyType{
 	public $type = Types::REFERENCE;
 }
 
-class ReferencesCollectionProperty extends BasePropertyType{
+class ReferencesCollectionProperty extends StringListProperty{
 	public $type = Types::REFERENCES_COLLECTION;
 }
 

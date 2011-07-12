@@ -8,6 +8,7 @@
 
 namespace lite\orm;
 use Exception;
+use lite\orm\driver\DatabaseError;
 
 class LockError extends Exception {}
 class DataError extends Exception {}
@@ -121,16 +122,23 @@ abstract class Model{
 	}
 	
 	/**
-	* Gets the model instance given keys.
+	* Gets the model instance given keys. 
 	* @param mixed $keys A list of keys or a single key.
 	* @return \lite\orm\Model
 	*/
 	public static function get($keys){
-	
+		global $liteDBDriver;
+		if (gettype($keys) == 'string') $keys = array($keys);
+		$resultArray = array();
+		$columns = array_keys(static::$properties);
+		$args = array();
+		foreach ($keys as $key){
+			
+		}
 	}
 	
 	/**
-	* Saves all untracked objects.
+	* Saves all untracked objects. Not really recommended.
 	*/
 	public static function putAll(){
 		foreach (static::$objects as $key => $obj){
@@ -145,6 +153,18 @@ abstract class Model{
 	 * @throws InvalidKeyError When the key specified is not a valid key.
 	 */
 	public final function __construct($key=null){
+		global $liteDBDriver;
+		
+		if (!isset($liteDBDriver)){
+			throw new DatabaseError('There is no database set!');
+		} else {
+			$cls = get_class($liteDBDriver);
+			if ($cls::IDENTITY != 'sqlite'){
+				throw new DatabaseError('A ' . $cls::IDENTITY .
+								'database is set, instead of a sqlite one.');
+			}
+		}
+		
 		if (!static::$locked) throw new LockError('The model "' . get_class() . 
 														'" is not locked!');
 		
@@ -209,13 +229,21 @@ abstract class Model{
 	}
 	
 	/**
-	* Saves a model into the database.
+	* Saves a model into the database. If successful, it will delete the object
+	* from the tracked objects list.
+	* @return boolean True if the save was successful.
 	*/
 	public function put(){
+		global $liteDBDriver;
 		$values = array();
 		foreach (static::$properties as $name => $type){
 			$values[$name] = array($this->data[$name], $type);
 		}
+		$success = ((bool) $liteDBDriver->replace(static::tablename,
+												  $values,
+												  $this->key));
+		if ($success) unset(static::$objects[$key]);
+		return $success;
 	}
 	
 	/**
@@ -224,7 +252,8 @@ abstract class Model{
 	 * @return boolean True if there's this record for this in the database.
 	 */	
 	public function saved(){
-		
+		global $liteDBDriver;
+		$result = static::get($this->key);
 	}
 	
 	/**

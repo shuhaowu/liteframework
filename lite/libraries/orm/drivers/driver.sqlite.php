@@ -9,10 +9,19 @@ class SQLiteResultRows extends ResultRows{
 	private $result;
 	private $position = 0;
 	private $currentRow;
+	private $len = 0;
 	public function __construct($result){
 		$this->result = $result;
 		$this->position = 0;
 		$this->currentRow = null;
+		$this->len = 0;
+		while ($this->result->fetchArray()){
+			$this->len++;
+		}
+	}
+
+	public function length(){
+		return $this->len;
 	}
 	
 	public function current(){
@@ -52,8 +61,10 @@ class SQLite implements DatabaseDriver{
 	public $returnSQL = false;
 	private $stmt = null;
 
-	public static function getType(&$propertytype){
-		switch ($propertytype->type){
+	const IDENTITY = 'sqlite';
+
+	public static function getType($type){
+		switch ($type){
 			case Types::STRING: case Types::STRING_LIST: 
 			case Types::REFERENCE:	case Types::REFERENCES_COLLECTION:
 				return \SQLITE3_TEXT;
@@ -93,10 +104,11 @@ class SQLite implements DatabaseDriver{
 		}
 	}
 
-	private function bindParamsToStatements(&$values, &$stmt){
+	private function bindParamsToStatements(&$params, &$stmt){
 		$i = 1;
-		foreach ($values as $value){
-			$stmt->bindParam($i, $value[0], self::getType($value[1]));
+		foreach ($params as $param){
+			$stmt->bindParam($i, $param->value,
+							 self::getType($param->type()));
 			$i++;
 		}
 	}
@@ -105,11 +117,11 @@ class SQLite implements DatabaseDriver{
 		$this->disconnect();
 	}
 	
-	private function prepBindExecute($sql, &$values, $returnResult=false){
-		if ($this->returnSQL) return $sql;
+	private function prepBindExecute($sql, &$params, $returnResult=false){
+		if ($this->returnSQL) return trim($sql);
 		
 		$stmt = $this->db->prepare($sql);
-		$this->bindParamsToStatements($values, $stmt);
+		$this->bindParamsToStatements($params, $stmt);
 		
 		
 		$result = $stmt->execute();
@@ -124,51 +136,63 @@ class SQLite implements DatabaseDriver{
 	}
 
 
-	public function insert($tablename, $values){
+	public function insert($tablename, $params){
 		$sql = "INSERT INTO $tablename ";
-		$columns = array_keys($values);
-
-		$len = count($columns); // Get the length of the columns.
-
+		$columns = array();
+		$len = 0;
+		foreach ($params as $param){
+			array_push($columns, $param->name);
+			$len++;
+		}
+		
 		// Populate the columns.
 		$sql .= '(' . implode(', ', $columns) . ') VALUES '; 
 
 		// Populate the values
 		$sql .= '(?' . str_repeat(', ?', $len-1) . ')';
-		return $this->prepBindExecute($sql, array_values($values));
+		return $this->prepBindExecute($sql, $params);
 	}
 
 
-	public function update($tablename, $values, $key){
+	private function createKeyComparison($key){
+		return new DatabaseLulz('key', $key, new StringProperty(), '=');
+	}
+
+	private function getColumns(&$params){
+		$columns = array();
+		foreach ($params as $param){
+			array_push($columns, $param->name);
+		}
+		return $columns;
+	}
+
+	public function update($tablename, $params, $key){
 		$sql = "UPDATE $tablename SET ";
 		// Populate the columns and ? for values
-		foreach ($values as $column => $value){
-			$sql .= "$column = ?, ";
-		}
-		
-		// Eliminate the ending ', '
-		$sql = substr($sql, 0, -2);
+		$columns = $this->getColumns($params);
+
+		$sql .= implode(' = ?, ', $columns) . ' = ?';
 		
 		// WHERE key = ?
 		$sql .= " WHERE key = ?";
 		
-		$values['key'] = array($key, new StringProperty());
-		return $this->prepBindExecute($sql, array_values($values));
+		array_push($params, $this->createKeyComparison($key));
+		
+		return $this->prepBindExecute($sql, $params);
 	}
-	
 	
 	public function delete($tablename, $key){
 		$sql = "DELETE FROM $tablename WHERE key = ?";
-		$values = array(array($key, new StringProperty()));
-		return $this->prepBindExecute($sql, $values);
+		$params = array($this->createKeyComparison($key));
+		return $this->prepBindExecute($sql, $params);
 	}
 	
 	
-	public function replace($tablename, $values, $key){
+	public function replace($tablename, $params, $key){
 		$sql = "INSERT OR REPLACE INTO $tablename ";
-		$columns = array_keys($values);
+		$columns = $this->getColumns($params);
 
-		$len = count($columns); // Get the length of the columns.
+		$len = count($params); // Get the length of the columns.
 
 		// Populate the columns.
 		$sql .= '(key, ' . implode(', ', $columns) . ') VALUES '; 
@@ -176,9 +200,8 @@ class SQLite implements DatabaseDriver{
 		// Populate the values
 		$sql .= '(?' . str_repeat(', ?', $len) . ')';
 		
-		$values = array_values($values);
-		array_unshift($values, array($key, new StringProperty()));
-		return $this->prepBindExecute($sql, $values);
+		array_unshift($params, $this->createKeyComparison($key));
+		return $this->prepBindExecute($sql, $params);
 	}
 	
 	public function directaccess(){
@@ -192,12 +215,11 @@ class SQLite implements DatabaseDriver{
 	}
 	
 	private function selectSQL($tablename, $columns, 
-						   	  $args, $sign, $limit=1000, 
+						   	  $params, $limit=1000, 
 						   	  $offset=0, $ordercolumn=false, 
 						   	  $order=false, $flag=Flags::F_AND){
-	
-		$sql = 'SELECT ' . implode(', ', $columns) . " FROM $tablename";
-		$len = count($args);
+		$sql = 'SELECT key, ' . implode(', ', $columns) . " FROM $tablename WHERE ";
+		$len = count($params);
 		if ($len > 0){
 			switch($flag){
 				case Flags::F_AND:
@@ -209,53 +231,35 @@ class SQLite implements DatabaseDriver{
 				default:
 					throw new \Exception("Not a valid flag: $flag");
 			}
-			
-			$sql .= ' WHERE';
-			$i = 1;
-			foreach ($args as $column => $value){
-				$sql .= " $column $sign ? ";
-				if ($i != $len) $sql .= $operator;
-				$i++;
+	
+			foreach ($params as $param){
+				if ($param != $params[$len-1]){
+					$sql .= "{$param->name} {$param->operation} ? $operator ";
+				} else {
+					$sql .= "{$param->name} {$param->operation} ?";
+				}
 			}
 		}
-		if ($ordercolumn && $order) $sql .= "ORDER BY $ordercolumn $order ";
-		$sql .= "LIMIT $offset, $limit";
+		if ($ordercolumn && $order) $sql .= " ORDER BY $ordercolumn $order ";
+		$sql .= " LIMIT $offset, $limit";
 		return $sql;
 	}
 	
 	public function select($tablename, $columns, 
-						   $args, $sign, $limit=1000, $offset=0,
+						   $params, $limit=1000, $offset=0,
 						   $ordercolumn=false, $order=false,
 						   $flag=Flags::F_AND){
-		$sql = $this->selectSQL($tablename, $columns, $args, $sign, $limit,
+		$sql = $this->selectSQL($tablename, $columns, $params, $limit,
 								$offset, $ordercolumn, $order, $flag);
 		
 		if ($this->returnSQL) return $sql;
-		$result = $this->prepBindExecute($sql, $args, true);
+		$result = $this->prepBindExecute($sql, $params, true);
 		return new SQLiteResultRows($result);
 	}
 	
-	public function filter($tablename, $columns, 
-						   $args, $limit=1000, $offset=0,
-						   $ordercolumn=false, $order=false,
-						   $flag=Flags::F_AND){
-		
-		return $this->select($tablename, $columns, $args, '=', $limit, $offset,
-							 $ordercolumn, $order, $flag);
-	}
-	
-	public function exclude($tablename, $columns,
-						   $args, $limit=1000, $offset=0,
-						   $ordercolumn=false, $order=false,
-						   $flag=Flags::F_AND){
-	
-		return $this->select($tablename, $columns, $args, '!=', $limit, $offset,
-		$ordercolumn, $order, $flag);
-	}
-	
 	public function get($tablename, $columns, $key){
-		$args = array('key' => array($key, new StringProperty()));
-		return $this->select($tablename, $columns, $args, '=', 1);
+		$params = array(new DatabaseLulz('key', $key, new StringProperty()));
+		return $this->select($tablename, $columns, $params, 1);
 	}
 }
 ?>

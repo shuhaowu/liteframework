@@ -49,7 +49,7 @@ if (isset($use_db) && $use_db){
 	
 	$driverClass = "\\lite\\orm\\drivers\\$driver";
 	if (class_exists($driverClass)){
-		$dbdriver = new $driverClass();
+		$liteDBDriver = new $driverClass();
 	}
 	
 	// Cleanup global scope. Yay 'Garbage' collection.

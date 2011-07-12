@@ -36,24 +36,41 @@ interface DatabaseDriver{
 	
 	public function disconnect();
 	
-	public function insert($tablename, $values);
-	public function update($tablename, $values, $key);
+	public function insert($tablename, $params);
+	public function update($tablename, $params, $key);
 	public function delete($tablename, $key);
 	
 	// Per database implementation on the most effective one.
-	public function replace($tablename, $values, $key);
+	public function replace($tablename, $params, $key);
 	public function directaccess(); // must use func_get_args();
-	public function filter($tablename, $columns, 
-						   $args, $limit=1000, $offset=0,
+	
+	public function select($tablename, $columns, 
+						   $params, $limit=1000, $offset=0,
 						   $ordercolumn=false, $order=false,
 						   $flag=Flags::F_AND);
 	
-	public function exclude($tablename, $columns,
-							$args, $limit=1000, $offset=0,
-							$ordercolumn=false, $order=false,
-							$flag=Flags::F_AND);
-	
 	public function get($tablename, $columns, $key);
+}
+
+/**
+ * The comparison operation such as column = 'value' or column LIKE 'value'
+ * Can't think of a better name.
+ */
+class DatabaseLulz{
+	public $name;
+	public $value;
+	public $valuetype;
+	public $operation;
+	public function __construct($name, $value, $valuetype, $operation='='){
+		$this->name = $name;
+		$this->value = $value;
+		$this->valuetype = $valuetype;
+		$this->operation = $operation;
+	}
+
+	public function type(){
+		return $this->valuetype->type;
+	}
 }
 
 class DatabaseNotFound extends \Exception {}
