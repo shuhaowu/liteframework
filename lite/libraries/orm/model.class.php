@@ -8,7 +8,8 @@
 
 namespace lite\orm;
 use Exception;
-use lite\orm\driver\DatabaseError;
+use lite\orm\drivers\DatabaseError;
+	use lite\orm\drivers\DatabaseLulz;
 
 class LockError extends Exception {}
 class DataError extends Exception {}
@@ -87,8 +88,8 @@ abstract class Model{
 	 * stored in the database.
 	 */
 	public static function addProperty($name, $type){
-		if (!static::$locked){
-			throw new LockError('The model "' . get_class() . 
+		if (static::$locked){
+			throw new LockError('The model "' . static::$tablename . 
 									'" has been locked.');
 		}
 		static::$properties[$name] = $type;
@@ -120,20 +121,26 @@ abstract class Model{
 	public static function all($keyonly=false){
 	
 	}
-	
-	/**
-	* Gets the model instance given keys. 
-	* @param mixed $keys A list of keys or a single key.
-	* @return \lite\orm\Model
-	*/
-	public static function get($keys){
+
+	protected static function getRow($key){
 		global $liteDBDriver;
-		if (gettype($keys) == 'string') $keys = array($keys);
-		$resultArray = array();
 		$columns = array_keys(static::$properties);
-		$args = array();
-		foreach ($keys as $key){
-			
+		return $liteDBDriver->get(static::$tablename, $columns, $key);
+	}
+
+
+	public static function get($key){
+		if (array_key_exists($key, static::$objects)){
+			return static::$objects[$key];
+		} else {
+			$rows = static::getRow($key);
+			foreach ($rows as $row){
+				$key = $row['key'];
+				unset($row['key']);
+				$obj = new static($key, $row);
+				unset(static::$objects[$key]); 
+				return $obj;
+			}
 		}
 	}
 	
@@ -149,10 +156,11 @@ abstract class Model{
 	/**
 	 * Construct a new instance of your model. This class must be subclassed.
 	 * @param string $key A key that will pass Model::validateKey.
+	 * @param array $data The data to initialize the model with. Assosiative.
 	 * @throws LockError You cannot initialize unless the class has been locked.
 	 * @throws InvalidKeyError When the key specified is not a valid key.
 	 */
-	public final function __construct($key=null){
+	public final function __construct($key=null, $data=null){
 		global $liteDBDriver;
 		
 		if (!isset($liteDBDriver)){
@@ -165,8 +173,9 @@ abstract class Model{
 			}
 		}
 		
-		if (!static::$locked) throw new LockError('The model "' . get_class() . 
-														'" is not locked!');
+		if (!static::$locked) throw new LockError('The model "' .
+												  get_class($this) . 
+												  '" is not locked!');
 		
 		// Key generation.
 		if (!$key){
@@ -185,6 +194,8 @@ abstract class Model{
 		foreach (static::$properties as $property => $type){
 			$this->data[$property] = $type->default;
 		}
+
+		if ($data) array_merge($this->data, $data);
 		
 		$this->init();
 	}
@@ -205,7 +216,7 @@ abstract class Model{
 		if (array_key_exists(static::$properties)){
 			return $this->data[$name];
 		} else {
-			throw new DataError("$name doesn't exist in " . get_class());
+			throw new DataError("$name doesn't exist in " . get_class($this));
 		}
 	}
 	
@@ -216,33 +227,49 @@ abstract class Model{
 	 * unsaved objects.
 	 * @param string $name The name of the attribute.
 	 * @param mixed $value The value's type must be the type of the declared
-	 * @throw DataError Thrown when the $value doesn't pass the $validation.
+	 * @throw DataError Thrown when the $value doesn't pass the $validation or
+	 * if the property is not registered.
 	 */
 	public function __set($name, $value){
-		if (array_key_exists(static::$properties)){
+		if (array_key_exists($name, static::$properties)){
 			if (static::$properties[$name]->validate($value)){
 				$this->data[$name] = $value;
+				if (!array_key_exists($this->key, static::$objects)){
+					static::$objects[$this->key] = $this;
+				}
 			} else {
 				throw new DataError("$value does not pass validation ($name).");
 			}
+		} else {
+			throw new DataError("$name is not a valid property for " .
+								get_class($this));
 		}
 	}
 	
 	/**
 	* Saves a model into the database. If successful, it will delete the object
 	* from the tracked objects list.
+	* @throw DataError if a required property is not filled.
 	* @return boolean True if the save was successful.
 	*/
 	public function put(){
 		global $liteDBDriver;
+		if (!$liteDBDriver->connected()) $liteDBDriver->connect();
 		$values = array();
 		foreach (static::$properties as $name => $type){
-			$values[$name] = array($this->data[$name], $type);
+			if ($type->required && is_null($this->data[$name])){
+				throw new DataError("$name is not set for " .
+									get_class($this) .
+									" {$this->key}");
+			}
+			array_push($values, new DatabaseLulz($name,
+												$this->data[$name],
+												static::$properties[$name]));
 		}
-		$success = ((bool) $liteDBDriver->replace(static::tablename,
+		$success = ((bool) $liteDBDriver->replace(static::$tablename,
 												  $values,
 												  $this->key));
-		if ($success) unset(static::$objects[$key]);
+		if ($success) unset(static::$objects[$this->key]);
 		return $success;
 	}
 	
@@ -254,13 +281,16 @@ abstract class Model{
 	public function saved(){
 		global $liteDBDriver;
 		$result = static::get($this->key);
+		
 	}
 	
 	/**
 	 * Updates the current object from the database.
 	 */
 	public function update(){
-		
+		$rows = static::getRow($this->key);
+		unset($rows['key']);
+		foreach ($rows as $property => $value) $this->data[$property] = $value;
 	}
 	
 }

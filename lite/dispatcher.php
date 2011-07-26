@@ -42,22 +42,20 @@ if (isset($use_db) && $use_db){
 	$driver = lite\arrayGet($dbinfo, 'driver', '');
 	
 	$database = lite\arrayGet($dbinfo, 'database', '');
-	$username = lite\arrayGet($dbinfo, 'username', '');
-	$password = lite\arrayGet($dbinfo, 'password', '');
+	$user = lite\arrayGet($dbinfo, 'username', '');
+	$pass = lite\arrayGet($dbinfo, 'password', '');
 	$host = lite\arrayGet($dbinfo, 'host', '');
-	$prefix = lite\arrayGet($dbinfo, 'prefix', '');
 	
 	$driverClass = "\\lite\\orm\\drivers\\$driver";
 	if (class_exists($driverClass)){
-		$liteDBDriver = new $driverClass();
+		$liteDBDriver = new $driverClass($database, $user, $pass, $host);
 	}
 	
 	// Cleanup global scope. Yay 'Garbage' collection.
 	unset($database);
-	unset($username);
-	unset($password);
+	unset($user);
+	unset($pass);
 	unset($host);
-	unset($prefix);
 	unset($driverClass);
 }
 

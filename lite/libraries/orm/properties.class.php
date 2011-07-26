@@ -51,14 +51,19 @@ class BasePropertyType{
 			if (array_key_exists($var, $param)) $this->$var = $param[$var];
 		}
 	}
+
+	protected function classvalidate($value){
+		return true;
+	}
 	
 	/**
 	 * Validates the value given a validator.
 	 * @param mixed $value A value to validate.
 	 */
 	public function validate($value){
-		if (!$this->validate) return true; 
-		return $this->validator($value);
+		if (!$this->validator) $customvalidate = true;
+		else $customvalidate = $this->validator($value); 
+		return $customvalidate && $this->classvalidate($value);
 	}
 
 	/**
@@ -73,14 +78,23 @@ class BasePropertyType{
 
 class StringProperty extends BasePropertyType{
 	public $type = Types::STRING;
+	protected function classvalidate($value){
+		return is_string($value);
+	}
 }
 
 class IntegerProperty extends BasePropertyType{
 	public $type = Types::INTEGER;
+	protected function classvalidate($value){
+		return is_int($value);
+	}
 }
 
 class FloatProperty extends BasePropertyType{
 	public $type = Types::FLOAT;
+	protected function classvalidate($value){
+		return is_float($value);
+	}
 }
 
 class BlobProperty extends BasePropertyType{
@@ -92,10 +106,17 @@ class StringListProperty extends BasePropertyType{
 	public function sqlValue($value){
 		return implode(';', $value);
 	}
+
+	protected function classvalidate($value){
+		return is_array($value);
+	}
 }
 
 class BooleanProperty extends BasePropertyType{
 	public $type = Types::BOOLEAN;
+	protected function classvalidate($value){
+		return is_bool($value);
+	}
 }
 
 class ReferenceProperty extends BasePropertyType{
@@ -108,5 +129,8 @@ class ReferencesCollectionProperty extends StringListProperty{
 
 class DateTimeProperty extends BasePropertyType{
 	public $type = Types::DATETIME;
+	public function sqlValue($value){
+		//TODO: Find
+	}
 }
 ?>

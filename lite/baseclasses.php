@@ -21,7 +21,7 @@ class AlreadyInitializedError extends \Exception {}
  * @author Shuhao Wu
  * @package lite
  */
-class BaseController{
+abstract class BaseController{
 	/**
 	 * The controller base class that provides a couple of simple functions.
 	 * @var \lite\renderer\Renderer
@@ -76,7 +76,7 @@ class BaseController{
 	 * after __construct (which is final). Here you can hook into the functions 
 	 * to execute pre-render, or any other things you need to setup.
 	 */
-	public function init(){}
+	abstract public function init();
 	
 	/**
 	 * Shortcut function that buffers the output, requires a page, then return 

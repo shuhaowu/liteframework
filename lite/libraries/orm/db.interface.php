@@ -50,6 +50,7 @@ interface DatabaseDriver{
 						   $flag=Flags::F_AND);
 	
 	public function get($tablename, $columns, $key);
+	public function connected();
 }
 
 /**
