@@ -81,12 +81,12 @@ is as follows:
   of arguments. (Incomplete/experimental)
 - ``$use_db``: Use a database or not (Boolean). Optional.
 - ``$dbinfo``: An associative array containing the info on the database.
- - ``'driver'`` => The class name of the desired DB driver. (Required if
+ * ``'driver'`` => The class name of the desired DB driver. (Required if
    ``$use_db = true``)
- - ``'database'`` => The database location (depending on the driver)
- - ``'username'`` => Username
- - ``'password'`` => Password
- - ``'host'`` => Host
+ * ``'database'`` => The database location (depending on the driver)
+ * ``'username'`` => Username
+ * ``'password'`` => Password
+ * ``'host'`` => Host
 
 ``lite/dispatcher.php`` is pretty much the entire application. When this script
 ends, the page is rendered and the connection is closed. The first thing the
