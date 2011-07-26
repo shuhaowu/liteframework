@@ -64,49 +64,49 @@ controllers are located and such.
 It then loads the file ``lite/dispatcher.php``. The list of variables/constants
 is as follows:
 
- - ``DEBUG``: Constant. boolean. If set to true, default error pages will
-   show some more info (as of the moment).
- - ``BASE_DIR``: Constant. string. This should always set to
-   ``dirname(__FILE__)``.
- - ``$views_location``: The path to the folder of the views php files.
- - ``$controller_file``: Controller File location containing the class
-   ``Controllers``
- - ``$template_location``: The path to the central template php file. False to
-   disable.
- - ``$errors_location``: The path to the folder of the custom errors pages for
-   different HTTP code. False to disable and use the default.
- - ``$lib_location``: The path to the folder of the custom library.
- - ``$url_map``: An url map to functions under the ``Controllers`` class.
-   Modeled after Django with regex. Eventually it will get support for passing
-   of arguments. (Incomplete/experimental)
- - ``$use_db``: Use a database or not (Boolean). Optional.
- - ``$dbinfo``: An associative array containing the info on the database.
-  - ``'driver'`` => The class name of the desired DB driver. (Required if
-    ``$use_db = true``)
-  - ``'database'`` => The database location (depending on the driver)
-  - ``'username'`` => Username
-  - ``'password'`` => Password
-  - ``'host'`` => Host
- 
+- ``DEBUG``: Constant. boolean. If set to true, default error pages will
+  show some more info (as of the moment).
+- ``BASE_DIR``: Constant. string. This should always set to
+  ``dirname(__FILE__)``.
+- ``$views_location``: The path to the folder of the views php files.
+- ``$controller_file``: Controller File location containing the class
+  ``Controllers``
+- ``$template_location``: The path to the central template php file. False to
+  disable.
+- ``$errors_location``: The path to the folder of the custom errors pages for
+  different HTTP code. False to disable and use the default.
+- ``$lib_location``: The path to the folder of the custom library.
+- ``$url_map``: An url map to functions under the ``Controllers`` class.
+  Modeled after Django with regex. Eventually it will get support for passing
+  of arguments. (Incomplete/experimental)
+- ``$use_db``: Use a database or not (Boolean). Optional.
+- ``$dbinfo``: An associative array containing the info on the database.
+ - ``'driver'`` => The class name of the desired DB driver. (Required if
+   ``$use_db = true``)
+ - ``'database'`` => The database location (depending on the driver)
+ - ``'username'`` => Username
+ - ``'password'`` => Password
+ - ``'host'`` => Host
+
 ``lite/dispatcher.php`` is pretty much the entire application. When this script
 ends, the page is rendered and the connection is closed. The first thing the
 dispatcher does is process the url. It strips the slashes from the beginning and
 the end of the URL. It breaks it down into 3 different (global) variables,
 ``$requestURL``, ``$name``, and ``$args``.
 
- - ``$requestURL`` is a string containing the full path after your domain name.
-   It is the URL requested without the trailing slash. However, it will always
-   have a slash in the beginning.
- - ``$name`` is the first part of the url. The URL is ``explode``d by ``/`` and
-   the first element of the resulting array is the ``$name`` variable. It is
-   also a string.
- - ``$args`` is the rest of the array ``explode``d.
+- ``$requestURL`` is a string containing the full path after your domain name.
+  It is the URL requested without the trailing slash. However, it will always
+  have a slash in the beginning.
+- ``$name`` is the first part of the url. The URL is ``explode``d by ``/`` and
+  the first element of the resulting array is the ``$name`` variable. It is
+  also a string.
+- ``$args`` is the rest of the array ``explode``d.
 
 Example: http://yoursite.com/somepage/arg1/arg2/ will have the following result:
 
- - ``$requestURL = '/somepage/arg1/arg2'``
- - ``$name = 'somepage'``
- - ``$args = array('arg1', 'arg2')``
+- ``$requestURL = '/somepage/arg1/arg2'``
+- ``$name = 'somepage'``
+- ``$args = array('arg1', 'arg2')``
 
 Then the dispatcher should load up all the libraries, specified in the
 ``$lib_location`` as well as the default ones (which includes the Model).
