@@ -341,6 +341,21 @@ class Renderer{
 		require $path; 
 		return $error;
 	}
+
+	/**
+	 * What a terrible failure. (Renders a 500 error page)
+	 * @param string $debuginfo The debug message.
+	 * @param PageHelper $page The $page variable we all learned to love.
+	 * @return array The error array.
+	 */
+	public function wtf($debuginfo, PageHelper &$page){
+		return $this->renderError(
+		array(500,
+			'WTF. What a Terrible Failure. You should not have seen this.',
+			$debug),
+		$page
+		);
+	}
 	
 	/**
 	 * Renders a page, giving the page only access to the $page variable 

@@ -60,6 +60,7 @@ class SQLite implements DatabaseDriver{
 	private $db = null;
 	public $returnSQL = false;
 	private $stmt = null;
+	public $name;
 
 	const IDENTITY = 'sqlite';
 
@@ -90,6 +91,7 @@ class SQLite implements DatabaseDriver{
 			throw new DatabaseNotFound("$database cannot be found!");
 		}
 		$this->database = $database;
+		$this->name = self::IDENTITY;
 	}
 
 	public function connect(){

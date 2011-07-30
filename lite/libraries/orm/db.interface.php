@@ -76,4 +76,5 @@ class DatabaseLulz{
 
 class DatabaseNotFound extends \Exception {}
 class DatabaseError extends \Exception {}
+
 ?>

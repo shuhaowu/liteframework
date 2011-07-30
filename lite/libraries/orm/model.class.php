@@ -28,6 +28,8 @@ abstract class Model{
 	protected $data = array();
 	protected static $properties = array();
 	protected static $locked = false;
+	private static $drivers = array();
+	private static $defaultdriver;
 	
 	/**
 	 * The tablename in the SQL, or other identifier. Let's not change this
@@ -49,6 +51,69 @@ abstract class Model{
 	 * @var unknown_type
 	 */
 	const KEY_LENGTH = 64;
+
+	/**
+	 * Adds a driver to the collection of drivers to be used for put() calls.
+	 * Must be done before the lock() call.
+	 * @param object $dbDriver Driver instances.
+	 */
+	public static function addDriver($dbDriver){
+		if (!static::$locked &&
+			!array_key_exists($dbDriver->name, self::$drivers)){
+			
+			self::$drivers[$dbDriver->name] = $dbDriver;
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Removes a driver. 
+	 * @param string/object $dbDriver Could be the actual driver object or the
+	 * $name for it.
+	 * @return boolean. false if the driver $name is not found in the collection
+	 * of drivers.
+	 */
+	public static function delDriver($dbDriver){
+		switch (gettype($dbDriver)){
+			case 'object':
+				$name = $dbDriver->name;
+			break;
+			case 'string':
+				$name = $dbDriver;
+			break;
+			default:
+				return false;
+		}
+
+		if (array_key_exists($name, self::$drivers)){
+			unset(self::$drivers[$name]);
+			return true;
+		}
+
+		return false;
+	}
+
+
+	/**
+	 * Sets the default driver to "SELECT" from.
+	 * @param object $dbDriver The driver instance. This must have been added
+	 * already to the collection of drivers.
+	 * @return boolean false if the driver didn't get added before.
+	 */
+	public static function setDefaultDriver($dbDriver){
+		if (!static::$locked &&
+			array_key_exists($dbDriver->name, self::$drivers)){
+
+			self::$defaultdriver = $dbDriver;
+			return true;
+		}
+		return false;
+	}
+
+	public static function getDefaultDriver(){
+		return self::$defaultdriver;
+	}
 	
 	/**
 	 * Generates a key for the primary key of the database.
@@ -119,16 +184,24 @@ abstract class Model{
 	* @return Iterator
 	*/
 	public static function all($keyonly=false){
-	
+		// ==================================== //
+		//  IMPLEMENT THIS FUNCTION YOU DUMMY!  //
+		// ==================================== //
 	}
 
 	protected static function getRow($key){
-		global $liteDBDriver;
 		$columns = array_keys(static::$properties);
-		return $liteDBDriver->get(static::$tablename, $columns, $key);
+		return self::$defaultdriver->get(static::$tablename, $columns, $key);
 	}
 
-
+	/**
+	 * Gets an object from the database or from the collection of unsaved
+	 * objects. Getting an object will not put it to the collection of
+	 * unsaved objects.
+	 * @param string $key The key for the object in question.
+	 * @return \lite\orm\Model A new instance of the object initialized using
+	 * its subclass from \lite\orm\Model
+	 */
 	public static function get($key){
 		if (array_key_exists($key, static::$objects)){
 			return static::$objects[$key];
@@ -145,13 +218,15 @@ abstract class Model{
 	}
 	
 	/**
-	* Saves all untracked objects. Not really recommended.
-	*/
+	 * Saves all untracked objects. Not really recommended.
+	 */
 	public static function putAll(){
 		foreach (static::$objects as $key => $obj){
 			$obj->put();
 		}
 	}
+
+	
 	
 	/**
 	 * Construct a new instance of your model. This class must be subclassed.
@@ -160,17 +235,9 @@ abstract class Model{
 	 * @throws LockError You cannot initialize unless the class has been locked.
 	 * @throws InvalidKeyError When the key specified is not a valid key.
 	 */
-	public final function __construct($key=null, $data=null){
-		global $liteDBDriver;
-		
-		if (!isset($liteDBDriver)){
-			throw new DatabaseError('There is no database set!');
-		} else {
-			$cls = get_class($liteDBDriver);
-			if ($cls::IDENTITY != 'sqlite'){
-				throw new DatabaseError('A ' . $cls::IDENTITY .
-								'database is set, instead of a sqlite one.');
-			}
+	public final function __construct($key=null, $data=null){		
+		if (!self::$defaultdriver){
+			throw new DatabaseError('There is no default database driver set!');
 		}
 		
 		if (!static::$locked) throw new LockError('The model "' .
@@ -253,8 +320,8 @@ abstract class Model{
 	* @return boolean True if the save was successful.
 	*/
 	public function put(){
-		global $liteDBDriver;
-		if (!$liteDBDriver->connected()) $liteDBDriver->connect();
+
+		// Constructs the value to put into the database.
 		$values = array();
 		foreach (static::$properties as $name => $type){
 			if ($type->required && is_null($this->data[$name])){
@@ -263,14 +330,24 @@ abstract class Model{
 									" {$this->key}");
 			}
 			array_push($values, new DatabaseLulz($name,
-												$this->data[$name],
-												static::$properties[$name]));
+									$type->sqlValue($this->data[$name]),
+									static::$properties[$name]));
 		}
-		$success = ((bool) $liteDBDriver->replace(static::$tablename,
-												  $values,
-												  $this->key));
-		if ($success) unset(static::$objects[$this->key]);
-		return $success;
+
+		// Loops through all the drivers and updates it.
+		$successes = array();
+		foreach (self::$drivers as $name => $driver){
+			if (!$driver->connected()) $driver->connect();
+			$success = ((bool) $driver->replace(static::$tablename,
+												$values,
+												$this->key));
+			$successes[$name] = $success;
+			if ($driver == self::$defaultdriver){
+				$successes['default'] = $success;
+				if ($success) unset(static::$objects[$this->key]);
+			}
+		}
+		return $successes;
 	}
 	
 	/**
@@ -279,9 +356,9 @@ abstract class Model{
 	 * @return boolean True if there's this record for this in the database.
 	 */	
 	public function saved(){
-		global $liteDBDriver;
-		$result = static::get($this->key);
-		
+		// ==================================== //
+		//  IMPLEMENT THIS FUNCTION YOU DUMMY!  //
+		// ==================================== //
 	}
 	
 	/**
@@ -291,6 +368,10 @@ abstract class Model{
 		$rows = static::getRow($this->key);
 		unset($rows['key']);
 		foreach ($rows as $property => $value) $this->data[$property] = $value;
+	}
+
+	public function getKey(){
+		return $this->key;
 	}
 	
 }

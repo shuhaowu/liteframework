@@ -124,7 +124,125 @@ error pages will be rendered with a 404 HTTP status.
 
 Framework terminates here.
 
-Views ane Rendering
-===================
+Controllers, Views, ane Rendering
+=================================
+
+Controllers
+-----------
+
+Controllers in the liteFramework are functions under the class ``Controllers``.
+This class is found in the file specified in ``$controller_file``. Under this
+file, you should have at least a class named ``Controllers`` which
+``extends BaseControllers``. BaseControllers provides some shortcut functions,
+such as rendering and initializing.
+
+URLs are mapped in such ways that the ``$name``, or the first segment before a /
+symbol. For example, http://yoursite.com/controller/args will fire
+``$controllers->controller(array('args'))``, given that ``$controllers`` is an
+instance of the class ``Controllers``.
+
+If there's nothing after the base URL (http:/yoursite.com/), $name will be
+automatically converted to ``index``. Hence, you must have an ``index`` function
+under the class ``Controllers``. http://yoursite.com/index will also fire the
+same function, provided that the url map doesn't override both of this.
+
+Controllers are technically allowed to do anything. You're allowed to not render
+anything, or even send any data back. You can use another rendering framework if
+you want. However, liteFramework does provide you with templating and the
+passing of variables (and even functions! via this thing called Helpers) to the
+view file.
+
+Views
+-----
+
+Views in the liteFramework is a the same as a generic php file. You're allowed
+to do anything PHP allows you to do. However, it's recommended that you have as
+little application logic in the view as possible. It's recommended that you have
+mostly just HTML with some embedded PHP to display variables or perform a loop.
+
+Views are .php files placed under the ``$views_location`` directory. Views are
+identified (their name) by the path of the .php file without the
+``$views_location`` part and without the .php extension and any slashes at the
+beginning or the end. For example, the view file placed at
+/www/your/views/directory/about/view.php will have the name of ``about/view``.
+
+Controllers can pass variables via the render function (through an associative
+array) to the view. The view can access those variables through the ``$page``
+variable.
+
+Rendering
+---------
+
+Rendering in the liteFramework is done via the renderer. What the renderer
+actually does is taking the php file, setup the variables correctly, and
+``require`` the template file. It's very primitive but it does the job right.
+Rendering could also happen within the view php file (i.e. templates).
+
+The ``Renderer`` class also provides a few shortcuts that allows error
+renderings and more.
+
+
+``$page`` variable
+==================
+
+The ``$page`` variable is an important concept in the liteFramework renderer.
+Essentially, in the ``$page`` variable, you can access the variables passed to
+the renderer in the associative array. (similar to Django)
+
+For example, you could pass the array
+``array('mewvalue' => 24, 'moovalue' => 3.14)`` to the renderer, it takes that
+array, then creates an ``PageHelper`` object (a.k.a. ``$page`` variable). It
+then assigns the associative array to become the attributes of that object.
+Hence ``$page->mewvalue == 24`` and ``$page->moovalue == 3.14``.
+
+The ``$page`` variable also provides a couple of functions, as well as access
+to an (the) instance of the ``Helper`` class, where you can define more
+variables and even functions.
+
+To summarize, the ``$page`` variable is how you access the variables passed to
+the view by the controller.
+
+
+Libraries and Helpers
+=====================
+
+Libraries
+---------
+
+Libraries is an important concept for the liteFramework as everything, except
+the renderer, the dispatcher (which really is just a linear php script), and the
+PageHelper (``$page`` variable), is a library. They are dynamically loaded
+during runtime and they can be deactivated.
+
+liteFramework will include a couple of "standard libraries" such as the
+Magic Models (ORM) and the Navbar constructor.
+
+Libraries are found in folders, where the main file to be ``require``d has the
+prefix of ``lib_`` in its filename. For example, ``lib_orm.php`` under the
+folder of ``/lite/libraries/`` will be automatically loaded by the dispatcher.
+Any code inside the php file will be executed as it's ``require``d.
+
+Default libraries included by the framework itself is found under the
+``/lite/libraries`` directory. However, developers should not place their own
+libraries here, rather in the directory specified in the index.php file under
+the variable ``$lib_location``.
+
+Helpers
+-------
+
+TO BE WRITTEN.
+
+Magic Models
+============
+
+TO BE WRITTEN.
+
+Other Standard Libraries
+========================
+
+TO BE WRITTEN.
+
+Design Patterns
+===============
 
 TO BE WRITTEN.
