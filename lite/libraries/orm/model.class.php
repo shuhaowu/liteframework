@@ -114,6 +114,10 @@ abstract class Model{
 	public static function getDefaultDriver(){
 		return self::$defaultdriver;
 	}
+
+	public static function unsavedObjectsCount(){
+		return count(static::$objects);
+	}
 	
 	/**
 	 * Generates a key for the primary key of the database.
@@ -210,7 +214,7 @@ abstract class Model{
 		} else {
 			$row = static::getOneModelRow($key);
 			$obj = new static($row['key'], $row);
-			unset(static::$objects[$key]); 
+			unset(static::$objects[$key]);
 			return $obj;
 		}
 	}
@@ -346,6 +350,7 @@ abstract class Model{
 			if ($driver == self::$defaultdriver){
 				$successes['default'] = $success;
 				if ($success) unset(static::$objects[$this->key]);
+				
 			}
 		}
 		return $successes;
