@@ -74,6 +74,10 @@ class BasePropertyType{
 	public function sqlValue($value){
 		return $value;
 	}
+
+	public function realValue($value){
+		return $value;
+	}
 }
 
 class StringProperty extends BasePropertyType{
@@ -99,6 +103,7 @@ class FloatProperty extends BasePropertyType{
 
 class BlobProperty extends BasePropertyType{
 	public $type = Types::BLOB;
+	
 }
 
 class StringListProperty extends BasePropertyType{
@@ -110,12 +115,19 @@ class StringListProperty extends BasePropertyType{
 	protected function classvalidate($value){
 		return is_array($value);
 	}
+
+	public function realValue($value){
+		return explode(';', $value);
+	}
 }
 
 class BooleanProperty extends BasePropertyType{
 	public $type = Types::BOOLEAN;
 	protected function classvalidate($value){
 		return is_bool($value);
+	}
+	public function realValue($value){
+		return (bool) $value;
 	}
 }
 

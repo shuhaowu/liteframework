@@ -97,10 +97,10 @@ the end of the URL. It breaks it down into 3 different (global) variables,
 - ``$requestURL`` is a string containing the full path after your domain name.
   It is the URL requested without the trailing slash. However, it will always
   have a slash in the beginning.
-- ``$name`` is the first part of the url. The URL is ``explode``d by ``/`` and
+- ``$name`` is the first part of the url. The URL is ``explode`` d by ``/`` and
   the first element of the resulting array is the ``$name`` variable. It is
   also a string.
-- ``$args`` is the rest of the array ``explode``d.
+- ``$args`` is the rest of the array ``explode`` d.
 
 Example: http://yoursite.com/somepage/arg1/arg2/ will have the following result:
 
@@ -112,7 +112,7 @@ Then the dispatcher should load up all the libraries, specified in the
 ``$lib_location`` as well as the default ones (which includes the Model).
 
 Dispatcher then proceeds to initialize the database driver (however, it doesn't
-connect until the first time the model calls `->put()`) if one is demanded.
+connect until the first time the model calls ``->put()`` ) if one is demanded.
 
 Controllers gets initialized next. The URL map will get parsed, the associated
 functions will be called. If no match is found, the function with the name of
@@ -217,10 +217,10 @@ during runtime and they can be deactivated.
 liteFramework will include a couple of "standard libraries" such as the
 Magic Models (ORM) and the Navbar constructor.
 
-Libraries are found in folders, where the main file to be ``require``d has the
+Libraries are found in folders, where the main file to be ``require`` d has the
 prefix of ``lib_`` in its filename. For example, ``lib_orm.php`` under the
 folder of ``/lite/libraries/`` will be automatically loaded by the dispatcher.
-Any code inside the php file will be executed as it's ``require``d.
+Any code inside the php file will be executed as it's ``require`` d.
 
 Default libraries included by the framework itself is found under the
 ``/lite/libraries`` directory. However, developers should not place their own

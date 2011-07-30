@@ -138,6 +138,7 @@ class BaseHelper{
 	 * Example: /something/args/args1 would return something
 	 * Note: / would return index
 	 * @param string $pagename The name of the page
+	 * @return string The controller name (Not the url mapped one)
 	 */
 	function getControllerFromName($pagename){
 		if ($pagename == '/') return 'index';

@@ -189,9 +189,11 @@ abstract class Model{
 		// ==================================== //
 	}
 
-	protected static function getRow($key){
+	protected static function getOneModelRow($key){
 		$columns = array_keys(static::$properties);
-		return self::$defaultdriver->get(static::$tablename, $columns, $key);
+		$rows = self::$defaultdriver->get(static::$tablename, $columns, $key);
+		foreach ($rows as $row) break;
+		return $row;
 	}
 
 	/**
@@ -206,14 +208,10 @@ abstract class Model{
 		if (array_key_exists($key, static::$objects)){
 			return static::$objects[$key];
 		} else {
-			$rows = static::getRow($key);
-			foreach ($rows as $row){
-				$key = $row['key'];
-				unset($row['key']);
-				$obj = new static($key, $row);
-				unset(static::$objects[$key]); 
-				return $obj;
-			}
+			$row = static::getOneModelRow($key);
+			$obj = new static($row['key'], $row);
+			unset(static::$objects[$key]); 
+			return $obj;
 		}
 	}
 	
@@ -226,6 +224,10 @@ abstract class Model{
 		}
 	}
 
+	protected static function sqlValueToRealValue($name, $value){
+		$type = static::$properties[$name];
+		return $type->realValue($value);
+	}
 	
 	
 	/**
@@ -261,8 +263,7 @@ abstract class Model{
 		foreach (static::$properties as $property => $type){
 			$this->data[$property] = $type->default;
 		}
-
-		if ($data) array_merge($this->data, $data);
+		if ($data) $this->updateWithRow($data);
 		
 		$this->init();
 	}
@@ -280,7 +281,7 @@ abstract class Model{
 	 * @return mixed The current cached value.
 	 */
 	public function __get($name){
-		if (array_key_exists(static::$properties)){
+		if (array_key_exists($name, static::$properties)){
 			return $this->data[$name];
 		} else {
 			throw new DataError("$name doesn't exist in " . get_class($this));
@@ -360,14 +361,19 @@ abstract class Model{
 		//  IMPLEMENT THIS FUNCTION YOU DUMMY!  //
 		// ==================================== //
 	}
+
+	protected function updateWithRow($row){
+		unset($row['key']);
+		foreach ($row as $name => $value){
+			$this->data[$name] = self::sqlValueToRealValue($name, $value);
+		}
+	}
 	
 	/**
 	 * Updates the current object from the database.
 	 */
 	public function update(){
-		$rows = static::getRow($this->key);
-		unset($rows['key']);
-		foreach ($rows as $property => $value) $this->data[$property] = $value;
+		$this->updateWithRow(static::getOneModelRow($this->key));
 	}
 
 	public function getKey(){

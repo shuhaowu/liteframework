@@ -55,10 +55,22 @@ class ModelTests extends PHPUnit_Framework_TestCase{
 			$i++;
 		}
 		$this->assertEquals(1, $i);
+		return $this->model;
+	}
+	/**
+	 * @depends testPut
+	 */
+	public function testUpdateAndGet($oldmodel){
+		$model = TheTestModel::get($oldmodel->getKey());
+		$this->assertEquals('hello', $model->textprop);
+		$this->assertEquals(32, $model->intprop);
+		$this->assertEquals(20.2, $model->floatprop);
+		$this->assertEquals(false, $model->boolprop);
+		$this->assertEquals(array('test', 'test2', 'test3'), $model->strlistprop);
 	}
 	
 	public function tearDown(){
-		
+		$this->model = null;
 	}
 }
 
