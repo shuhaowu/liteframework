@@ -9,10 +9,12 @@
 namespace lite\orm;
 use Exception;
 use lite\orm\drivers\DatabaseError;
-	use lite\orm\drivers\DatabaseLulz;
+use lite\orm\drivers\DatabaseLulz;
 
 class LockError extends Exception {}
 class DataError extends Exception {}
+class NotSavedError extends Exception {}
+class AlreadyDeletedError extends Exception {}
 
 /**
  * The model class that each model needs to extend from in order to function
@@ -26,10 +28,12 @@ abstract class Model{
 	protected static $objects = array();
 	protected $key;
 	protected $data = array();
+	protected $saved = false;
 	protected static $properties = array();
 	protected static $locked = false;
 	private static $drivers = array();
 	private static $defaultdriver;
+	protected $deleted = false;
 	
 	/**
 	 * The tablename in the SQL, or other identifier. Let's not change this
@@ -111,6 +115,9 @@ abstract class Model{
 		return false;
 	}
 
+	/**
+	 * 
+	 */
 	public static function getDefaultDriver(){
 		return self::$defaultdriver;
 	}
@@ -182,11 +189,11 @@ abstract class Model{
 	}
 	
 	/**
-	* Gets an iterator that iterates through all the objects.
-	* @param boolean $keyonly If this is set to true, it returns an iterator of
-	* keys instead of all the objects, which is much more efficient.
-	* @return Iterator
-	*/
+	 * Gets an iterator that iterates through all the objects.
+	 * @param boolean $keyonly If this is set to true, it returns an iterator of
+	 * keys instead of all the objects, which is much more efficient.
+	 * @return Iterator
+	 */
 	public static function all($keyonly=false){
 		// ==================================== //
 		//  IMPLEMENT THIS FUNCTION YOU DUMMY!  //
@@ -196,6 +203,7 @@ abstract class Model{
 	protected static function getOneModelRow($key){
 		$columns = array_keys(static::$properties);
 		$rows = self::$defaultdriver->get(static::$tablename, $columns, $key);
+		$row = false;
 		foreach ($rows as $row) break;
 		return $row;
 	}
@@ -207,12 +215,14 @@ abstract class Model{
 	 * @param string $key The key for the object in question.
 	 * @return \lite\orm\Model A new instance of the object initialized using
 	 * its subclass from \lite\orm\Model
+	 * @throw \lite\orm\NotSavedError if the $key is not found.
 	 */
 	public static function get($key){
 		if (array_key_exists($key, static::$objects)){
 			return static::$objects[$key];
 		} else {
 			$row = static::getOneModelRow($key);
+			if (!$row) throw new NotSavedError("$key is not found!");
 			$obj = new static($row['key'], $row);
 			unset(static::$objects[$key]);
 			return $obj;
@@ -238,8 +248,13 @@ abstract class Model{
 	 * Construct a new instance of your model. This class must be subclassed.
 	 * @param string $key A key that will pass Model::validateKey.
 	 * @param array $data The data to initialize the model with. Assosiative.
-	 * @throws LockError You cannot initialize unless the class has been locked.
-	 * @throws InvalidKeyError When the key specified is not a valid key.
+	 * You should never use this as it is used by the framework to initialize
+	 * a new object fom the database. It will also set a flag that tells the
+	 * model system that the object has been saved at one point. (is_saved
+	 * returns true). Using this wrong may cause unexpected failures. Leave it
+	 * to its default if unsure how to use this feature.
+	 * @throw LockError You cannot initialize unless the class has been locked.
+	 * @throw InvalidKeyError When the key specified is not a valid key.
 	 */
 	public final function __construct($key=null, $data=null){		
 		if (!self::$defaultdriver){
@@ -267,7 +282,10 @@ abstract class Model{
 		foreach (static::$properties as $property => $type){
 			$this->data[$property] = $type->default;
 		}
-		if ($data) $this->updateWithRow($data);
+		if ($data){
+			$this->updateWithRow($data);
+			$this->saved = true;
+		}
 		
 		$this->init();
 	}
@@ -277,14 +295,22 @@ abstract class Model{
 	 * function.
 	 */
 	abstract public function init();
+
+	protected function checkDeleted(){
+		if ($this->deleted){
+			throw new AlreadyDeletedError("Model {$this->key} has been deleted.");
+		}
+	}
 	
 	/**
 	 * Gets an attribute that's cached locally. Use $object->update
 	 * @param string $name Accessed via $obj->attribute
 	 * @throw DataError when the $name doesn't exist.
+	 * @throw AlreadyDeletedError when the model has been deleted.
 	 * @return mixed The current cached value.
 	 */
 	public function __get($name){
+		$this->checkDeleted();
 		if (array_key_exists($name, static::$properties)){
 			return $this->data[$name];
 		} else {
@@ -301,8 +327,10 @@ abstract class Model{
 	 * @param mixed $value The value's type must be the type of the declared
 	 * @throw DataError Thrown when the $value doesn't pass the $validation or
 	 * if the property is not registered.
+	 * @throw
 	 */
 	public function __set($name, $value){
+		$this->checkDeleted();
 		if (array_key_exists($name, static::$properties)){
 			if (static::$properties[$name]->validate($value)){
 				$this->data[$name] = $value;
@@ -319,13 +347,14 @@ abstract class Model{
 	}
 	
 	/**
-	* Saves a model into the database. If successful, it will delete the object
-	* from the tracked objects list.
-	* @throw DataError if a required property is not filled.
-	* @return boolean True if the save was successful.
-	*/
+	 * Saves a model into the database. If successful, it will delete the object
+	 * from the tracked objects list.
+	 * @throw DataError if a required property is not filled.
+	 * @throw AlreadyDeletedError if it's already deleted.
+	 * @return boolean True if the save was successful.
+	 */
 	public function put(){
-
+		$this->checkDeleted();
 		// Constructs the value to put into the database.
 		$values = array();
 		foreach (static::$properties as $name => $type){
@@ -349,8 +378,10 @@ abstract class Model{
 			$successes[$name] = $success;
 			if ($driver == self::$defaultdriver){
 				$successes['default'] = $success;
-				if ($success) unset(static::$objects[$this->key]);
-				
+				if ($success){
+					unset(static::$objects[$this->key]);
+					$this->saved = true;
+				}
 			}
 		}
 		return $successes;
@@ -361,12 +392,26 @@ abstract class Model{
 	 * if it is changed. (You have to keep track of that.)
 	 * @return boolean True if there's this record for this in the database.
 	 */	
-	public function saved(){
-		// ==================================== //
-		//  IMPLEMENT THIS FUNCTION YOU DUMMY!  //
-		// ==================================== //
+	public function is_saved(){
+		return $this->saved;
 	}
 
+	/**
+	 * Deletes this model from the database.
+	 * @throw \lite\orm\NotSavedError If the model is not saved.
+	 * @throw AlreadyDeletedError if the model is already deleted.
+	 */
+	public function delete(){
+		$this->checkDeleted();
+		if (!$this->saved) throw new NotSavedError("{$this->key} is not saved!");
+		foreach (self::$drivers as $driver){
+			$driver->delete(static::$tablename, $this->key);
+			unset(static::$objects[$this->key]);
+			$this->deleted = true;
+			$this->saved = false;
+		}
+	}
+	
 	protected function updateWithRow($row){
 		unset($row['key']);
 		foreach ($row as $name => $value){
@@ -378,14 +423,19 @@ abstract class Model{
 	 * Updates the current object from the database.
 	 */
 	public function update(){
+		$this->checkDeleted();
 		$this->updateWithRow(static::getOneModelRow($this->key));
 	}
 
+	/**
+	 * Get the key for the model.
+	 * @return string
+	 */
 	public function getKey(){
 		return $this->key;
 	}
-	
 }
+
 
 
 ?>

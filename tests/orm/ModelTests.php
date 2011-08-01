@@ -32,7 +32,6 @@ TheTestModel::setup();
 class ModelTests extends PHPUnit_Framework_TestCase{
 	public function setUp(){
 		
-		
 	}
 	
 
@@ -44,7 +43,9 @@ class ModelTests extends PHPUnit_Framework_TestCase{
 		$model->floatprop = 20.2;
 		$model->boolprop = false;
 		$model->strlistprop = array('test', 'test2', 'test3');
+		$this->assertEquals(false, $model->is_saved());
 		$model->put();
+		$this->assertEquals(true, $model->is_saved());
 		$this->assertEquals(0, TheTestModel::unsavedObjectsCount());
 		$rows = $liteDBDriver->get('testmodel', array('textprop', 'intprop', 'floatprop', 'boolprop', 'strlistprop'), $model->getKey());
 		$i = 0;
@@ -64,6 +65,7 @@ class ModelTests extends PHPUnit_Framework_TestCase{
 	 */
 	public function testGetModifyAndUpdate($oldmodel){
 		$model = TheTestModel::get($oldmodel->getKey());
+		$this->assertEquals(true, $model->is_saved());
 		$this->assertEquals('hello', $model->textprop);
 		$this->assertEquals(32, $model->intprop);
 		$this->assertEquals(20.2, $model->floatprop);
@@ -75,6 +77,25 @@ class ModelTests extends PHPUnit_Framework_TestCase{
 		$this->assertEquals($model->getKey(), $oldmodel->getKey());
 		$oldmodel->update();
 		$this->assertEquals('lulz', $oldmodel->textprop);
+		return $model;
+	}
+
+
+	/**
+	 * @depends testGetModifyAndUpdate
+	 * @expectedException \lite\orm\NotSavedError
+	 */
+	public function testDelete($model){
+		$key = $model->getKey();
+		$model->delete();
+		$i = 0;
+		TheTestModel::get($key);
+	}
+	/**
+	 * @expectedException \lite\orm\NotSavedError
+	 */
+	public function testNonExistingGet(){
+		$model = TheTestModel::get('notavailable');
 	}
 	
 	public function tearDown(){

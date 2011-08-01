@@ -75,6 +75,9 @@ class BasePropertyType{
 		return $value;
 	}
 
+	/**
+	 * Converts from SQL friendly value back to a real value.
+	 */
 	public function realValue($value){
 		return $value;
 	}

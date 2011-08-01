@@ -253,7 +253,7 @@ class SQLite implements DatabaseDriver{
 		return $sql;
 	}
 	
-		public function select($tablename, $columns, 
+	public function select($tablename, $columns, 
 						   $params, $limit=1000, $offset=0,
 						   $ordercolumn=false, $order=false,
 						   $flag=Flags::F_AND){
