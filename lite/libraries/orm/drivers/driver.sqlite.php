@@ -226,7 +226,19 @@ class SQLite implements DatabaseDriver{
 						   	  $params, $limit=1000, 
 						   	  $offset=0, $ordercolumn=false, 
 						   	  $order=false, $flag=Flags::F_AND){
-		$sql = 'SELECT key, ' . implode(', ', $columns) . " FROM $tablename WHERE ";
+		if (count($columns)){
+			$sql = 'SELECT key, ' . implode(', ', $columns);
+		} else {
+			$sql = 'SELECT key';
+		}
+		$sql .= " FROM $tablename WHERE ";
+		$this->setupParams($sql, $params, $flag);
+		if ($ordercolumn && $order) $sql .= " ORDER BY $ordercolumn $order ";
+		$sql .= " LIMIT $offset, $limit";
+		return $sql;
+	}
+	
+	private function setupParams(&$sql, &$params, $flag){
 		$len = count($params);
 		if ($len > 0){
 			switch($flag){
@@ -248,9 +260,6 @@ class SQLite implements DatabaseDriver{
 				}
 			}
 		}
-		if ($ordercolumn && $order) $sql .= " ORDER BY $ordercolumn $order ";
-		$sql .= " LIMIT $offset, $limit";
-		return $sql;
 	}
 	
 	public function select($tablename, $columns, 
@@ -263,6 +272,17 @@ class SQLite implements DatabaseDriver{
 		if ($this->returnSQL) return $sql;
 		$result = $this->prepBindExecute($sql, $params, true);
 		return new SQLiteResultRows($result);
+	}
+	
+	public function count($tablename, $params, $flag=Flags::F_AND){
+		$sql = "SELECT COUNT(key) AS count FROM $tablename WHERE ";
+		
+		$this->setupParams($sql, $params, $flag);
+		
+		if ($this->returnSQL) return $sql;
+		$result = $this->prepBindExecute($sql, $params, true);
+		$row = $result->fetchArray(\SQLITE3_ASSOC);
+		return $row['count'];
 	}
 	
 	public function get($tablename, $columns, $key){

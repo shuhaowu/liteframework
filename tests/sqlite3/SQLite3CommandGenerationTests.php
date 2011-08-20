@@ -62,6 +62,15 @@ class SQLite3CommandGenerationTests extends PHPUnit_Framework_TestCase{
 		$this->assertEquals($sqlcheck, $sql);
 	}
 	
+	public function testCount(){
+		$sqlcheck = 'SELECT COUNT(key) AS count FROM sometable WHERE column1 > ? AND key = ?';
+		$params = array();
+		$params[0] = new DatabaseLulz('column1', 1, new IntegerProperty(), '>');
+		$params[1] = new DatabaseLulz('key', 'lolkey', new StringProperty());
+		$sql = $this->driver->count('sometable', $params);
+		$this->assertEquals($sqlcheck, $sql);
+	}
+	
 	public function testGet(){
 		$sql = trim($this->driver->get('sometable', array('column1', 'column2'), 'lolkey'));
 		$this->assertEquals('SELECT key, column1, column2 FROM sometable WHERE key = ? LIMIT 0, 1', $sql);

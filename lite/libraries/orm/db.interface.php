@@ -48,6 +48,8 @@ interface DatabaseDriver{
 						   $params, $limit=1000, $offset=0,
 						   $ordercolumn=false, $order=false,
 						   $flag=Flags::F_AND);
+						   
+	public function count($tablename, $params, $flag=Flags::F_AND);
 	
 	public function get($tablename, $columns, $key);
 	public function connected();

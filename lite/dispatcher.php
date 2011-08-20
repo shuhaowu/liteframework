@@ -57,8 +57,8 @@ if (isset($use_db) && $use_db){
 	unset($pass);
 	unset($host);
 	unset($driverClass);
-	Model::addDriver($liteDBDriver);
-	Model::setDefaultDriver($liteDBDriver);
+	\lite\orm\Model::addDriver($liteDBDriver);
+	\lite\orm\Model::setDefaultDriver($liteDBDriver);
 }
 
 // Initializes components

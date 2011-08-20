@@ -1,6 +1,6 @@
 <?php
 /**
- * The Model class
+ * The Model class. All model classes need to extend from this class.
  * @author Shuhao Wu <shuhao@shuhaowu.com>
  * @copyright Copyright (c) 2011, Shuhao Wu
  * @package \lite\orm
@@ -24,7 +24,7 @@ class AlreadyDeletedError extends Exception {}
  * @copyright Copyright (c) 2011, Shuhao Wu
  * @package \lite\orm
  */
-abstract class Model{
+class Model{
 	protected static $objects = array();
 	protected $key;
 	protected $data = array();
@@ -181,11 +181,15 @@ abstract class Model{
 	}
 	
 	/**
-	 * Returns an array of all the properties.
-	 * @return array 
+	 * Gets the type of a property
+	 * @return \lite\orm\types\BasePropertyType
 	 */
-	public static function properties(){
-		return static::$properties;
+	public static function getType($property){
+		if (array_key_exists($property, static::$properties)){
+			return static::$properties[$property];
+		} else {
+			return null;
+		}
 	}
 	
 	/**
@@ -291,10 +295,10 @@ abstract class Model{
 	}
 	
 	/**
-	 * A function called immediately after __construct. You must implement this 
-	 * function.
+	 * A function called immediately after __construct.
 	 */
-	abstract public function init();
+	public function init(){
+	}
 
 	protected function checkDeleted(){
 		if ($this->deleted){
@@ -412,7 +416,10 @@ abstract class Model{
 		}
 	}
 	
-	protected function updateWithRow($row){
+	/**
+	 * Updates with row. (Associative array)
+	 */
+	public function updateWithRow($row){
 		unset($row['key']);
 		foreach ($row as $name => $value){
 			$this->data[$name] = self::sqlValueToRealValue($name, $value);

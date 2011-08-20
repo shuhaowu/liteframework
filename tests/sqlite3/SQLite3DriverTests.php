@@ -112,6 +112,16 @@ class SQLite3DriverTests extends PHPUnit_Framework_TestCase{
 		$this->assertEquals(false, $row);
 	}
 	
+	public function testCount(){
+		$count = $this->driver->count('multitable', array(new DatabaseLulz('key', self::$key, new StringProperty())));
+		$this->assertEquals(0, $count);
+		
+		$this->insertSomeDataz();
+		
+		$count = $this->driver->count('multitable', array(new DatabaseLulz('key', self::$key, new StringProperty())));
+		$this->assertEquals(1, $count);
+	}
+	
 	public function testGet(){
 		$this->insertSomeDataz();
 		$columns = array('mewvalue', 'lolvalue', 'key');

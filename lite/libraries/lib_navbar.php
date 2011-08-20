@@ -91,7 +91,8 @@ class Navbar{
 			}
 			
 			if ($currentPage == $name){
-				// $var could, and should, either be 'a' or 'textwrap'
+				// $var, the first part of the current attribute in HTML (before the ;)
+				// Can be linkwrap, a, or textwrap.
 				$var = $this->active['tag'];
 				$this->addAttr($this->active['attr'], $$var);
 			}
@@ -131,4 +132,6 @@ class Navbar{
 	}
 }
 
+// TODO: Improvements needed to cache the HTML somewhere, so it doesn't have to be rendered everytime
+// TODO: Parses the entire document.
 ?>

@@ -3,7 +3,9 @@ use \lite;
 
 // Must be named Controllers and extends BaseController
 class Controllers extends \lite\BaseController{	
-	
+	public function init(){
+		throw new Exception('IMPLEMENT ME!! D\': *cries*');
+	}
 }
 
 
