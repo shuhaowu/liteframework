@@ -231,7 +231,7 @@ class SQLite implements DatabaseDriver{
 		} else {
 			$sql = 'SELECT key';
 		}
-		$sql .= " FROM $tablename WHERE ";
+		$sql .= " FROM $tablename";
 		$this->setupParams($sql, $params, $flag);
 		if ($ordercolumn && $order) $sql .= " ORDER BY $ordercolumn $order ";
 		$sql .= " LIMIT $offset, $limit";
@@ -241,6 +241,7 @@ class SQLite implements DatabaseDriver{
 	private function setupParams(&$sql, &$params, $flag){
 		$len = count($params);
 		if ($len > 0){
+			$sql .= ' WHERE ';
 			switch($flag){
 				case Flags::F_AND:
 					$operator = 'AND';
@@ -251,7 +252,7 @@ class SQLite implements DatabaseDriver{
 				default:
 					throw new \Exception("Not a valid flag: $flag");
 			}
-	
+			
 			foreach ($params as $param){
 				if ($param != $params[$len-1]){
 					$sql .= "{$param->name} {$param->operation} ? $operator ";
@@ -268,14 +269,13 @@ class SQLite implements DatabaseDriver{
 						   $flag=Flags::F_AND){
 		$sql = $this->selectSQL($tablename, $columns, $params, $limit,
 								$offset, $ordercolumn, $order, $flag);
-		
 		if ($this->returnSQL) return $sql;
 		$result = $this->prepBindExecute($sql, $params, true);
 		return new SQLiteResultRows($result);
 	}
 	
 	public function count($tablename, $params, $flag=Flags::F_AND){
-		$sql = "SELECT COUNT(key) AS count FROM $tablename WHERE ";
+		$sql = "SELECT COUNT(key) AS count FROM $tablename";
 		
 		$this->setupParams($sql, $params, $flag);
 		

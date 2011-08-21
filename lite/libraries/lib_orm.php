@@ -22,6 +22,7 @@ class DriverNotFound extends \Exception {}
 
 $filepath = dirname(__FILE__);
 require_once($filepath . '/orm/properties.class.php');
+require_once($filepath . '/orm/query.class.php');
 require_once($filepath . '/orm/model.class.php');
 require_once($filepath . '/orm/db.interface.php');
 lite\importLibraries($filepath . '/orm/drivers', 'driver.');

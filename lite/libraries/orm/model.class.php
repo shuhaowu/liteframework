@@ -193,17 +193,15 @@ class Model{
 	}
 	
 	/**
-	 * Gets an iterator that iterates through all the objects.
+	 * Gets Query object.
 	 * @param boolean $keyonly If this is set to true, it returns an iterator of
 	 * keys instead of all the objects, which is much more efficient.
-	 * @return Iterator
+	 * @return \lite\orm\Query
 	 */
 	public static function all($keyonly=false){
-		// ==================================== //
-		//  IMPLEMENT THIS FUNCTION YOU DUMMY!  //
-		// ==================================== //
+		return new Query(new \ReflectionClass(get_called_class()), $keyonly);
 	}
-
+	
 	protected static function getOneModelRow($key){
 		$columns = array_keys(static::$properties);
 		$rows = self::$defaultdriver->get(static::$tablename, $columns, $key);
@@ -279,8 +277,6 @@ class Model{
 		}
 		$this->key = $key;
 		
-		static::$objects[$key] = $this;
-		
 		// Initialize the values. This should initialize all the values as 
 		// the default for $type->default is null.
 		foreach (static::$properties as $property => $type){
@@ -289,6 +285,8 @@ class Model{
 		if ($data){
 			$this->updateWithRow($data);
 			$this->saved = true;
+		} else {
+			static::$objects[$key] = $this;
 		}
 		
 		$this->init();

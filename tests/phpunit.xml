@@ -7,6 +7,7 @@
 		</testsuite>
 		<testsuite name="ORMGenericTests">
 			<file>orm/ModelTests.php</file>
+			<file>orm/QueryTests.php</file>
 		</testsuite>
 	</testsuites>
 </phpunit>

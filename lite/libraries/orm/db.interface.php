@@ -26,10 +26,17 @@ class Flags{
  * This interface shows all the appropriate variables and functions a class that
  * uses different backends for database must have. This means that if the app
  * was to switch backend, the operations should be unaffected.
+ * 
+ * There must be a class constant named IDENTITY. This should be the name of the
+ * backend database. 
+ * There must also be a instant variable named $name. This is used to give 
+ * unique names to instances.
+ * 
  * @author Shuhao Wu <shuhao@shuhaowu.com>
  * @package \lite\orm\drivers
  */
 interface DatabaseDriver{
+	// TODO: DOCUMENT! DOCUMENT!
 	public function __construct($database, $username, $password, $host);
 	
 	public function connect();
