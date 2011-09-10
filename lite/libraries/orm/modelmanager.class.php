@@ -1,6 +1,6 @@
 <?php
 /**
- * The model manager class, all models must use this to be initialized.
+ * The model manager class.
  * @author Shuhao Wu <shuhao@shuhaowu.com>
  * @copyright Copyright (c) 2011, Shuhao Wu
  * @package \lite\orm
@@ -9,12 +9,43 @@
 namespace lite\orm;
 use lite\orm\drivers\DatabaseLulz;
 
+class NotSavedError extends Exception {}
+class LockError extends Exception {}
+
+/**
+ * The ModelManager class keeps track of Models and interact with the database
+ * on their behaves.
+ * @author Shuhao Wu <shuhao@shuhaowu.com>
+ * @copyright Copyright (c) 2011, Shuhao Wu
+ * @package \lite\orm
+ */
 class ModelManager{
 	private static $drivers = array();
 	private static $defaultdriver;
 	private $objects = array();
 	private $properties = array();
 	private $locked = false;
+	private $tablename;
+	private $modelClass;
+
+	private static $instances = array();
+
+	/**
+	 * Creates a new instance of a ModelManager.
+	 * This must be done for every single Model subclass.
+	 */
+	private function __construct($tablename, $modelClass){
+		$this->tablename = $tablename;
+		$this->modelClass = $modelClass;
+		self::$instances[$modelClass] = $this;
+	}
+
+	public static function getInstance($tablename, $modelClass){
+		if (array_key_exists($modelClass, self::$instances))
+			return self::$instances[$modelClass];
+		else
+			return new ModelManager($tablename, $modelClass);
+	}
 
 	/**
 	 * Adds a driver to the collection of drivers to be used for put() calls.
@@ -78,7 +109,10 @@ class ModelManager{
 	}
 
 	public function lock(){
-		$this->locked = true;
+		if (self::$defaultdriver)
+			$this->locked = true;
+		else
+			throw new Exception('Default driver not set yet!');
 	}
 
 	public function unsavedObjectsCount(){
@@ -150,21 +184,6 @@ class ModelManager{
 		return $row;
 	}
 
-	private function sqlValueToRealValue($name, $value){
-		$type = $this->properties[$name];
-		return $type->realValue($value);
-	}
-
-	/**
-	 * Creates a new instance of the model class given
-	 * @return \lite\orm\Model
-	 */
-	public function create(){
-		$obj = new $this->modelClass();
-		$this->objects[$obj->getKey()] = $obj;
-		return $obj;
-	}
-
 	private function checkDeleted($model){
 		if ($model->deleted) throw new NotSavedError('Model ' . $model->getKey() . ' has already been deleted.');
 	}
@@ -192,13 +211,14 @@ class ModelManager{
 			$successes[$name] = $success;
 			if ($driver == self::$defaultdriver){
 				$successes['default'] = $success;
-				if ($success){
-					unset($this->objects[$model->getKey()]);
-					$model->saved = true;
-				}
+				if ($success) unset($this->objects[$model->getKey()]);
 			}
 		}
 		return $successes;
+	}
+
+	public function trackModel($model){
+		$this->objects[$model->getKey()] = $model;
 	}
 
 	/**
@@ -213,9 +233,14 @@ class ModelManager{
 		foreach (self::$drivers as $driver){
 			$driver->delete($this->tablename, $model->getKey());
 			unset($this->objects[$model->key]);
-			$model->deleted = true;
-			$model->saved = false;
 		}
 	}
+
+	public function update($model){
+		$this->checkDeleted($model);
+		$model->updateWithRow($this->getModelRow($model->getKey()));
+	}
+
+
 }
 ?>

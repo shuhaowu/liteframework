@@ -7,4 +7,118 @@
  */
 
 namespace lite\orm;
+
+/**
+ * The model class that each model needs to extend from in order to function
+ * correctly.
+ * @author Shuhao Wu <shuhao@shuhaowu.com>
+ * @copyright Copyright (c) 2011, Shuhao Wu
+ * @package \lite\orm
+ */
+class Model{
+	protected $key;
+	protected $data = array();
+	private $saved = false;
+	private $deleted = false;
+	private $manager;
+	public static $tablename;
+
+	private static function sqlValueToRealValue($name, $value){
+		$type = $this->properties[$name];
+		return $type->realValue($value);
+	}
+
+	public function __construct($key=null, $data=null){
+		$this->manager = ModelManager::getInstance($tablename, get_called_class());
+		if (!$this->manager->locked()) throw new LockError('The model "' . get_class($this) . '" is not locked!');
+
+		if (!$key){
+			$key = self::generateKey();
+		} else {
+			if (!self::validateKey($key))
+				throw new InvalidKeyError("$key is not a valid key.");
+		}
+
+		$this->key = $key;
+		foreach ($properties as $name => $type){
+			$this->data[$name] = $type->default;
+		}
+		if ($data){
+			$this->updateWithRow($data);
+			$this->saved = true;
+		} else {
+			$this->manager->trackModel($this);
+		}
+
+		$this->init();
+	}
+
+	public function init(){
+	}
+
+	public function updateWithRow($row){
+		unset($row['key']);
+		foreach ($row as $name => $value){
+			$this->data[$name] = self::sqlValueToRealValue($name, $value);
+		}
+	}
+
+	public function rawData($name){
+		if (array_key_exists($name, $this->data))
+			return $name;
+		throw new Exception("$name doesn't exist in " . get_called_class());
+	}
+
+	public function getKey(){
+		return $this->key;
+	}
+
+	public function __set($name, $value){
+		$this->manager->checkDeleted($this);
+		if (array_key_exists($name, $this->data)){
+			$type = $this->manager->getType($name);
+			if ($type->validate($value)){
+				$this->data[$name] = $value;
+				$this->manager->trackModel($this);
+			} else {
+				throw new DataError("$value does not pass validation ($name).");
+			}
+		} else {
+			throw new DataError("$name is not a valid property for " . get_class($this));
+		}
+	}
+
+	public function __get($name){
+		$this->manager->checkDeleted($this);
+		if (array_key_exists($name, $this->data)){
+			return $this->data[$name];
+		} else {
+			throw new DataError("$name doesn't exist in " . get_class($this));
+		}
+	}
+
+	public function put(){
+		$successes = $this->manager->put($this);
+		if ($successes['default']) $this->saved = true;
+	}
+
+	public function update(){
+		$this->manager->update($this);
+		$this->saved = true;
+	}
+
+	public function delete(){
+		$this->manager->delete($this);
+		$this->deleted = true;
+		$this->saved = false;
+	}
+
+	public function is_saved(){
+		return $this->saved;
+	}
+
+	public function is_deleted(){
+		return $this->deleted;
+	}
+}
 ?>
