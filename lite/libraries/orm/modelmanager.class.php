@@ -185,7 +185,7 @@ class ModelManager{
 	}
 
 	private function checkDeleted($model){
-		if ($model->deleted) throw new NotSavedError('Model ' . $model->getKey() . ' has already been deleted.');
+		if ($model->is_deleted()) throw new NotSavedError('Model ' . $model->getKey() . ' has already been deleted.');
 	}
 
 	public function put($model){
@@ -221,6 +221,10 @@ class ModelManager{
 		$this->objects[$model->getKey()] = $model;
 	}
 
+	public function hasModel($key){
+		return array_key_exists($key, $this->objects);
+	}
+
 	/**
 	 * Deletes this model from the database.
 	 * @param \lite\orm\Model $model
@@ -229,7 +233,7 @@ class ModelManager{
 	 */
 	public function delete($model){
 		$this->checkDeleted($model);
-		if (!$model->saved) throw new NotSavedError($model->getKey() . ' is not saved!');
+		if (!$model->is_saved()) throw new NotSavedError($model->getKey() . ' is not saved!');
 		foreach (self::$drivers as $driver){
 			$driver->delete($this->tablename, $model->getKey());
 			unset($this->objects[$model->key]);

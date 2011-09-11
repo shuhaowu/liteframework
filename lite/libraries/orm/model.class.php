@@ -23,13 +23,35 @@ class Model{
 	private $manager;
 	public static $tablename;
 
+	const KEY_CHARACTER_SET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+	const KEY_LENGTH = 32;
+
+	public static function generateKey(){
+		$key = '';
+		for ($i=0;$i<self::KEY_LENGTH;$i++){
+			$choice = rand(0, strlen(self::KEY_CHARACTER_SET)-1);
+			$key .= substr(self::KEY_CHARACTER_SET, $choice, 1);
+		}
+		return $key;
+	}
+
+	public static function validateKey($key){
+		return  (strlen($key) <= self::KEY_LENGTH) &&
+				(preg_match('/[a-zA-Z0-9]+/', $key)) &&
+				(!$this->manager->hasModel($key));
+	}
+
 	private static function sqlValueToRealValue($name, $value){
-		$type = $this->properties[$name];
+		$type = $this->manager->getType($name);
 		return $type->realValue($value);
 	}
 
+	public static function getManager(){
+		return ModelManager::getInstance(static::$tablename, get_called_class());
+	}
+
 	public function __construct($key=null, $data=null){
-		$this->manager = ModelManager::getInstance($tablename, get_called_class());
+		$this->manager = ModelManager::getInstance(static::$tablename, get_called_class());
 		if (!$this->manager->locked()) throw new LockError('The model "' . get_class($this) . '" is not locked!');
 
 		if (!$key){
