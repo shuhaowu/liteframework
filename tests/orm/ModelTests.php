@@ -4,14 +4,16 @@ require_once('../lite/commons.php');
 require_once('../lite/libraries/lib_orm.php');
 require_once('orm/TheTestModel.class.php');
 use \lite\orm\Model;
+use \lite\orm\ModelManager;
 class ModelTests extends PHPUnit_Framework_TestCase{
+	private $manager;
 	public function setUp(){
-		
+		$this->manager = TheTestModel::getManager();
 	}
-	
+
 
 	public function testPut(){
-		$liteDBDriver = Model::getDefaultDriver();
+		$liteDBDriver = ModelManager::getDefaultDriver();
 		$model = new TheTestModel();
 		$model->textprop = 'hello';
 		$model->intprop = 32;
@@ -21,7 +23,7 @@ class ModelTests extends PHPUnit_Framework_TestCase{
 		$this->assertEquals(false, $model->is_saved());
 		$model->put();
 		$this->assertEquals(true, $model->is_saved());
-		$this->assertEquals(0, TheTestModel::unsavedObjectsCount());
+		$this->assertEquals(0, $this->manager->unsavedObjectsCount());
 		$rows = $liteDBDriver->get('testmodel', array('textprop', 'intprop', 'floatprop', 'boolprop', 'strlistprop'), $model->getKey());
 		$i = 0;
 		foreach ($rows as $row){
@@ -39,7 +41,7 @@ class ModelTests extends PHPUnit_Framework_TestCase{
 	 * @depends testPut
 	 */
 	public function testGetModifyAndUpdate($oldmodel){
-		$model = TheTestModel::get($oldmodel->getKey());
+		$model = $this->manager->get($oldmodel->getKey());
 		$this->assertEquals(true, $model->is_saved());
 		$this->assertEquals('hello', $model->textprop);
 		$this->assertEquals(32, $model->intprop);
@@ -48,7 +50,7 @@ class ModelTests extends PHPUnit_Framework_TestCase{
 		$this->assertEquals(array('test', 'test2', 'test3'), $model->strlistprop);
 		$model->textprop = 'lulz';
 		$model->put();
-		$this->assertEquals(0, TheTestModel::unsavedObjectsCount());
+		$this->assertEquals(0, $this->manager->unsavedObjectsCount());
 		$this->assertEquals($model->getKey(), $oldmodel->getKey());
 		$oldmodel->update();
 		$this->assertEquals('lulz', $oldmodel->textprop);
@@ -64,17 +66,17 @@ class ModelTests extends PHPUnit_Framework_TestCase{
 		$key = $model->getKey();
 		$model->delete();
 		$i = 0;
-		TheTestModel::get($key);
+		$this->manager->get($key);
 	}
 	/**
 	 * @expectedException \lite\orm\NotSavedError
 	 */
 	public function testNonExistingGet(){
-		$model = TheTestModel::get('notavailable');
+		$model = $this->manager->get('notavailable');
 	}
-	
+
 	public function tearDown(){
-		
+
 	}
 }
 

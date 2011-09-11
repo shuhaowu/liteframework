@@ -77,9 +77,8 @@ class Query{
 
 	public function fetch($limit=1000, $offset=0){
 		$results = array();
-		$driver = Model::getDefaultDriver();
-		$columns = ($this->keyonly) ?
-					array() : $this->manager->getAllProperties());
+		$driver = ModelManager::getDefaultDriver();
+		$columns = ($this->keyonly) ? array() : $this->manager->getAllProperties();
 
 		$rows = $driver->select($this->manager->getTablename(),
 								$columns,
@@ -105,7 +104,7 @@ class Query{
 	}
 
 	public function count(){
-		$driver = Model::getDefaultDriver();
+		$driver = ModelManager::getDefaultDriver();
 		return $driver->count($this->manager->getTablename(), $this->params);
 	}
 

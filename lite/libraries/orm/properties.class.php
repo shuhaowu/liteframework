@@ -29,24 +29,24 @@ class Types{
 class BasePropertyType{
 	/**
 	 * The type of the property.
-	 * @var string 
+	 * @var string
 	 */
 	public $type;
 	public $default = null;
 	public $required = false;
 	public $validator = false;
-	
+
 	private static $things = array('default', 'required', 'validator');
-	
+
 	/**
 	 * Creates a new property object.
-	 * @param array $param Parameters to be passed in. 
+	 * @param array $param Parameters to be passed in.
 	 * It's a key=>value dictionary with the key of 'default', '
 	 * required', and 'validator'. 'validator' should point to an anonymous
 	 * function. 'required' should point to a boolean. 'default' points to the
 	 * default value.
 	 */
-	public function __construct(array $param=array()){		
+	public function __construct(array $param=array()){
 		foreach (self::$things as $var){
 			if (array_key_exists($var, $param)) $this->$var = $param[$var];
 		}
@@ -55,14 +55,14 @@ class BasePropertyType{
 	protected function classvalidate($value){
 		return true;
 	}
-	
+
 	/**
 	 * Validates the value given a validator.
 	 * @param mixed $value A value to validate.
 	 */
 	public function validate($value){
 		if (!$this->validator) $customvalidate = true;
-		else $customvalidate = $this->validator($value); 
+		else $customvalidate = $this->validator($value);
 		return $customvalidate && $this->classvalidate($value);
 	}
 
@@ -106,7 +106,7 @@ class FloatProperty extends BasePropertyType{
 
 class BlobProperty extends BasePropertyType{
 	public $type = Types::BLOB;
-	
+
 }
 
 class StringListProperty extends BasePropertyType{

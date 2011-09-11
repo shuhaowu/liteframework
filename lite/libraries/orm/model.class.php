@@ -8,6 +8,7 @@
 
 namespace lite\orm;
 
+class DataError extends \Exception {}
 /**
  * The model class that each model needs to extend from in order to function
  * correctly.
@@ -38,11 +39,11 @@ class Model{
 	public static function validateKey($key){
 		return  (strlen($key) <= self::KEY_LENGTH) &&
 				(preg_match('/[a-zA-Z0-9]+/', $key)) &&
-				(!$this->manager->hasModel($key));
+				(!static::getManager()->hasModel($key));
 	}
 
 	private static function sqlValueToRealValue($name, $value){
-		$type = $this->manager->getType($name);
+		$type = static::getManager()->getType($name);
 		return $type->realValue($value);
 	}
 
@@ -62,7 +63,10 @@ class Model{
 		}
 
 		$this->key = $key;
-		foreach ($properties as $name => $type){
+
+		$properties = $this->manager->getAllProperties();
+		foreach ($properties as $name){
+			$type = $this->manager->getType($name);
 			$this->data[$name] = $type->default;
 		}
 		if ($data){
@@ -85,11 +89,6 @@ class Model{
 		}
 	}
 
-	public function rawData($name){
-		if (array_key_exists($name, $this->data))
-			return $name;
-		throw new Exception("$name doesn't exist in " . get_called_class());
-	}
 
 	public function getKey(){
 		return $this->key;

@@ -8,7 +8,7 @@
 
 namespace lite\orm;
 use lite\orm\drivers\DatabaseLulz;
-
+use Exception;
 class NotSavedError extends Exception {}
 class LockError extends Exception {}
 
@@ -172,7 +172,7 @@ class ModelManager{
 	 * @throw \lite\orm\NotSavedError if the $key is not found.
 	 */
 	public function get($key){
-		$this->checkLocked()
+		$this->checkLocked();
 		if (array_key_exists($key, $this->objects)){
 			return $this->objects[$key];
 		} else {
@@ -191,7 +191,7 @@ class ModelManager{
 		return $row;
 	}
 
-	private function checkDeleted($model){
+	public function checkDeleted($model){
 		if ($model->is_deleted()) throw new NotSavedError('Model ' . $model->getKey() . ' has already been deleted.');
 	}
 
@@ -206,14 +206,14 @@ class ModelManager{
 									' ' . $model->getKey());
 			}
 			array_push($values, new DatabaseLulz($name,
-									$type->sqlValue($model->rawData($name)),
+									$type->sqlValue($model->$name),
 									$this->properties[$name]));
 		}
 
 		$successes = array();
 		foreach (self::$drivers as $name => $driver){
 			if (!$driver->connected()) $driver->connect();
-			$success = ((bool) $driver->replace($this->tablename,
+			$success = (bool) $driver->replace($this->tablename,
 												$values,
 												$model->getKey());
 			$successes[$name] = $success;
@@ -245,7 +245,7 @@ class ModelManager{
 		if (!$model->is_saved()) throw new NotSavedError($model->getKey() . ' is not saved!');
 		foreach (self::$drivers as $driver){
 			$driver->delete($this->tablename, $model->getKey());
-			unset($this->objects[$model->key]);
+			unset($this->objects[$model->getKey()]);
 		}
 	}
 
@@ -268,5 +268,8 @@ class ModelManager{
 		return $this->modelClass;
 	}
 
+	public function locked(){
+		return $this->locked;
+	}
 }
 ?>
