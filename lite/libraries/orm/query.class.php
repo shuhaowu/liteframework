@@ -10,7 +10,7 @@ namespace lite\orm;
 use \lite\orm\drivers\DatabaseLulz;
 
 /**
- * This is pretty much Google App Engine's Query class. Available at 
+ * This is pretty much Google App Engine's Query class. Available at
  * http://code.google.com/appengine/docs/python/datastore/queryclass.html
  * However, this may be a bit different, such as not supporting passing
  * a model instance to get a query object.
@@ -23,31 +23,31 @@ class Query{
 	private $keyonly;
 	private $requirements;
 	private $orderby;
+	private $manager;
    /**
 	* This creates a new Query object. Note: Different from GAE's interface.
 	* Instead of manually creating this, use the static methods provided.
-	* @param \ReflectionClass $class A reflection class for the Model class.
+	* @param \lite\orm\ModelManager $manager A reflection class for the Model class.
 	* @param boolean $keyOnly If only get keys
 	*/
-	public function __construct($class, $keyonly=false){
-		$this->modelClass = $class;
+	public function __construct($manager, $keyonly=false){
+		$this->manager = $manager;
 		$this->keyonly = $keyonly;
-		$this->vars = $this->modelClass->getStaticProperties();
 		$this->params = array();
 		$this->orderby = false;
 		$this->order = false;
 	}
-	
+
 	public function filter($propertyOperator, $value){
 		$propertyOperator = explode(' ', $propertyOperator);
 		$name = $propertyOperator[0];
 		$operator = $propertyOperator[1];
-		$valuetype = $this->vars['properties'][$name];
+		$valuetype = $this->manager->getType($name);
 		$moo = new DatabaseLulz($name, $value, $valuetype, $operator); // lols
 		array_push($this->params, $moo);
 		return $this;
 	}
-	
+
 	public function order($property){
 		$this->order = substr($property, 0, 1);
 		$hasOrderOperator = true;
@@ -69,19 +69,19 @@ class Query{
 		}
 		return $this;
 	}
-	
+
 	public function get(){
 		$results = $this->fetch(1);
 		return $results[0];
 	}
-	
+
 	public function fetch($limit=1000, $offset=0){
 		$results = array();
 		$driver = Model::getDefaultDriver();
-		$columns = ($this->keyonly) ? 
-					array() : array_keys($this->vars['properties']);
+		$columns = ($this->keyonly) ?
+					array() : $this->manager->getAllProperties());
 
-		$rows = $driver->select($this->vars['tablename'], 
+		$rows = $driver->select($this->manager->getTablename(),
 								$columns,
 								$this->params,
 								$limit, $offset,
@@ -91,23 +91,24 @@ class Query{
 			if ($this->keyonly){
 				array_push($results, $row['key']);
 			} else {
-				if (array_key_exists($row['key'], $this->vars['objects'])){
-					$obj = $this->vars['objects'];
+				if ($this->manager->hasModel($row['key'])){
+					$obj = $this->manager->get($key);
 					$obj->updateWithRow($row);
 				} else {
-					$obj = $this->modelClass->newInstance($row['key'], $row);
+					$modelClass = $this->manager->getModelclass();
+					$obj = new $modelClass($row['key'], $row);
 				}
 				array_push($results, $obj);
 			}
 		}
 		return $results;
 	}
-	
+
 	public function count(){
 		$driver = Model::getDefaultDriver();
-		return $driver->count($this->vars['tablename'], $this->params);
+		return $driver->count($this->manager->getTablename(), $this->params);
 	}
-	
+
 	public function reset(){
 		$this->orderby = false;
 		$this->order = false;

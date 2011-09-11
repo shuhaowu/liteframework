@@ -119,9 +119,14 @@ class ModelManager{
 		return count($this->objects);
 	}
 
-	private function checkLock(){
+	private function checkNotLocked(){
 		if ($this->locked)
-			throw new LockError("Model {$this->modelClass} is locked!");
+			throw new LockError("ModelManager {$this->modelClass} is locked!");
+	}
+
+	private function checkLocked(){
+		if (!$this->locked)
+			throw new LockError("$modelClass manager not locked yet!");
 	}
 
 	/**
@@ -131,7 +136,7 @@ class ModelManager{
 	 * stored in the database.
 	 */
 	public function addProperty($name, $type){
-		$this->checkLock();
+		$this->checkNotLocked();
 		$this->properties[$name] = $type;
 	}
 
@@ -140,6 +145,7 @@ class ModelManager{
 	 * @return \lite\orm\types\BasePropertyType
 	 */
 	public function getType($name){
+		$this->checkLocked();
 		if (array_key_exists($name, $this->properties))
 			return $this->properties[$name];
 		else
@@ -153,7 +159,7 @@ class ModelManager{
 	 * @return \lite\orm\Query
 	 */
 	public function all($keyonly=false){
-		return new Query(new \ReflectionClass($this->modelClass));
+		return new Query($this, $keyonly);
 	}
 
 	/**
@@ -166,6 +172,7 @@ class ModelManager{
 	 * @throw \lite\orm\NotSavedError if the $key is not found.
 	 */
 	public function get($key){
+		$this->checkLocked()
 		if (array_key_exists($key, $this->objects)){
 			return $this->objects[$key];
 		} else {
@@ -189,6 +196,7 @@ class ModelManager{
 	}
 
 	public function put($model){
+		$this->checkLocked();
 		$this->checkDeleted($model);
 		$values = array();
 		foreach ($this->properties as $name => $type){
@@ -232,6 +240,7 @@ class ModelManager{
 	 * @throw AlreadyDeletedError if the model is already deleted.
 	 */
 	public function delete($model){
+		$this->checkLocked();
 		$this->checkDeleted($model);
 		if (!$model->is_saved()) throw new NotSavedError($model->getKey() . ' is not saved!');
 		foreach (self::$drivers as $driver){
@@ -241,10 +250,23 @@ class ModelManager{
 	}
 
 	public function update($model){
+		$this->checkLocked();
 		$this->checkDeleted($model);
 		$model->updateWithRow($this->getModelRow($model->getKey()));
 	}
 
+	public function getAllProperties(){
+		$this->checkLocked();
+		return array_keys($this->properties);
+	}
+
+	public function getTablename(){
+		return $this->tablename;
+	}
+
+	public function getModelclass(){
+		return $this->modelClass;
+	}
 
 }
 ?>
