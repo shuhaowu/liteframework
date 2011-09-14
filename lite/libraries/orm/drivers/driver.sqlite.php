@@ -23,26 +23,26 @@ class SQLiteResultRows extends ResultRows{
 	public function length(){
 		return $this->len;
 	}
-	
+
 	public function current(){
 		return $this->currentRow;
 	}
-	
+
 	public function key(){
 		return $this->position;
 	}
-	
+
 	public function next(){
 		$this->position++;
 		$this->currentRow = $this->result->fetchArray(\SQLITE3_ASSOC);
 	}
-	
+
 	public function rewind(){
 		$this->position = 0;
 		$this->result->reset();
 		$this->currentRow = $this->result->fetchArray(\SQLITE3_ASSOC);
 	}
-	
+
 	public function valid(){
 		return !!$this->currentRow;
 	}
@@ -66,7 +66,7 @@ class SQLite implements DatabaseDriver{
 
 	public static function getType($type){
 		switch ($type){
-			case Types::STRING: case Types::STRING_LIST: 
+			case Types::STRING: case Types::STRING_LIST:
 			case Types::REFERENCE:	case Types::REFERENCES_COLLECTION:
 				return \SQLITE3_TEXT;
 			break;
@@ -120,21 +120,20 @@ class SQLite implements DatabaseDriver{
 			$i++;
 		}
 	}
-	
+
 	public function __destruct(){
 		$this->disconnect();
 	}
-	
+
 	private function prepBindExecute($sql, &$params, $returnResult=false){
 		if ($this->returnSQL) return trim($sql);
-		
+
 		$stmt = $this->db->prepare($sql);
 		$this->bindParamsToStatements($params, $stmt);
-		
-		
+
 		$result = $stmt->execute();
 		$errcode = $this->db->lastErrorCode();
-		
+
 		if ($errcode){
 			throw new DatabaseError($this->db->lastErrorMsg(), $errcode);
 		} else {
@@ -152,9 +151,9 @@ class SQLite implements DatabaseDriver{
 			array_push($columns, $param->name);
 			$len++;
 		}
-		
+
 		// Populate the columns.
-		$sql .= '(' . implode(', ', $columns) . ') VALUES '; 
+		$sql .= '(' . implode(', ', $columns) . ') VALUES ';
 
 		// Populate the values
 		$sql .= '(?' . str_repeat(', ?', $len-1) . ')';
@@ -180,22 +179,22 @@ class SQLite implements DatabaseDriver{
 		$columns = $this->getColumns($params);
 
 		$sql .= implode(' = ?, ', $columns) . ' = ?';
-		
+
 		// WHERE key = ?
 		$sql .= " WHERE key = ?";
-		
+
 		array_push($params, $this->createKeyComparison($key));
-		
+
 		return $this->prepBindExecute($sql, $params);
 	}
-	
+
 	public function delete($tablename, $key){
 		$sql = "DELETE FROM $tablename WHERE key = ?";
 		$params = array($this->createKeyComparison($key));
 		return $this->prepBindExecute($sql, $params);
 	}
-	
-	
+
+
 	public function replace($tablename, $params, $key){
 		$sql = "INSERT OR REPLACE INTO $tablename ";
 		$columns = $this->getColumns($params);
@@ -203,28 +202,28 @@ class SQLite implements DatabaseDriver{
 		$len = count($params); // Get the length of the columns.
 
 		// Populate the columns.
-		$sql .= '(key, ' . implode(', ', $columns) . ') VALUES '; 
+		$sql .= '(key, ' . implode(', ', $columns) . ') VALUES ';
 
 		// Populate the values
 		$sql .= '(?' . str_repeat(', ?', $len) . ')';
-		
+
 		array_unshift($params, $this->createKeyComparison($key));
 		return $this->prepBindExecute($sql, $params);
 	}
-	
+
 	public function directaccess(){
 		$args = func_get_args();
 		$sql = array_shift($args);
 		$stmt = $this->db->prepare($sql);
 		$this->bindParamsToStatements($args, $stmt);
-		
+
 		$result = $stmt->execute();
 		return array($result, $this->db->changes(), $this->db->lastErrorMsg());
 	}
-	
-	private function selectSQL($tablename, $columns, 
-						   	  $params, $limit=1000, 
-						   	  $offset=0, $ordercolumn=false, 
+
+	private function selectSQL($tablename, $columns,
+						   	  $params, $limit=1000,
+						   	  $offset=0, $ordercolumn=false,
 						   	  $order=false, $flag=Flags::F_AND){
 		if (count($columns)){
 			$sql = 'SELECT key, ' . implode(', ', $columns);
@@ -237,7 +236,7 @@ class SQLite implements DatabaseDriver{
 		$sql .= " LIMIT $offset, $limit";
 		return $sql;
 	}
-	
+
 	private function setupParams(&$sql, &$params, $flag){
 		$len = count($params);
 		if ($len > 0){
@@ -252,7 +251,7 @@ class SQLite implements DatabaseDriver{
 				default:
 					throw new \Exception("Not a valid flag: $flag");
 			}
-			
+
 			foreach ($params as $param){
 				if ($param != $params[$len-1]){
 					$sql .= "{$param->name} {$param->operation} ? $operator ";
@@ -262,8 +261,8 @@ class SQLite implements DatabaseDriver{
 			}
 		}
 	}
-	
-	public function select($tablename, $columns, 
+
+	public function select($tablename, $columns,
 						   $params, $limit=1000, $offset=0,
 						   $ordercolumn=false, $order=false,
 						   $flag=Flags::F_AND){
@@ -273,18 +272,18 @@ class SQLite implements DatabaseDriver{
 		$result = $this->prepBindExecute($sql, $params, true);
 		return new SQLiteResultRows($result);
 	}
-	
+
 	public function count($tablename, $params, $flag=Flags::F_AND){
 		$sql = "SELECT COUNT(key) AS count FROM $tablename";
-		
+
 		$this->setupParams($sql, $params, $flag);
-		
+
 		if ($this->returnSQL) return $sql;
 		$result = $this->prepBindExecute($sql, $params, true);
 		$row = $result->fetchArray(\SQLITE3_ASSOC);
 		return $row['count'];
 	}
-	
+
 	public function get($tablename, $columns, $key){
 		$params = array(new DatabaseLulz('key', $key, new StringProperty()));
 		return $this->select($tablename, $columns, $params, 1);

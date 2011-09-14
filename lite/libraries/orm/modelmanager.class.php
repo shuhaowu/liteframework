@@ -199,6 +199,7 @@ class ModelManager{
 		$this->checkLocked();
 		$this->checkDeleted($model);
 		$values = array();
+
 		foreach ($this->properties as $name => $type){
 			if ($type->required && is_null($model->rawData($name))){
 				throw new DataError("$name is not set for " .
@@ -222,6 +223,7 @@ class ModelManager{
 				if ($success) unset($this->objects[$model->getKey()]);
 			}
 		}
+
 		return $successes;
 	}
 

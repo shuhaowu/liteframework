@@ -36,7 +36,7 @@ class BasePropertyType{
 	public $required = false;
 	public $validator = false;
 
-	private static $things = array('default', 'required', 'validator');
+	protected static $things = array('default', 'required', 'validator');
 
 	/**
 	 * Creates a new property object.
@@ -47,7 +47,7 @@ class BasePropertyType{
 	 * default value.
 	 */
 	public function __construct(array $param=array()){
-		foreach (self::$things as $var){
+		foreach (static::$things as $var){
 			if (array_key_exists($var, $param)) $this->$var = $param[$var];
 		}
 	}
@@ -136,10 +136,35 @@ class BooleanProperty extends BasePropertyType{
 
 class ReferenceProperty extends BasePropertyType{
 	public $type = Types::REFERENCE;
+	public $reference_class = null;
+	protected static $things = array('default', 'required', 'validator', 'reference_class');
+	public function classvalidate($value){
+		return is_a($value, $this->reference_class);
+	}
+
+	public function realValue($value){
+		$manager = call_user_func(array($this->reference_class, 'getManager'));
+		$model = $manager->get($value);
+		// $model->update(); // Required??
+		return $model;
+	}
+
+	public function sqlValue($value){
+		return $value->getKey();
+	}
 }
 
-class ReferencesCollectionProperty extends StringListProperty{
+class ReferencesCollectionProperty extends ReferenceProperty{
 	public $type = Types::REFERENCES_COLLECTION;
+
+	public function classvalidate($value){
+	}
+
+	public function realValue($value){
+	}
+
+	public function sqlValue($value){
+	}
 }
 
 class DateTimeProperty extends BasePropertyType{

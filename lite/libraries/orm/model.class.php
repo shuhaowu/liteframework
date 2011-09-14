@@ -47,6 +47,10 @@ class Model{
 		return $type->realValue($value);
 	}
 
+	public static function getClassname(){
+		return get_called_class();
+	}
+
 	public static function getManager(){
 		return ModelManager::getInstance(static::$tablename, get_called_class());
 	}
@@ -120,7 +124,12 @@ class Model{
 
 	public function put(){
 		$successes = $this->manager->put($this);
-		if ($successes['default']) $this->saved = true;
+		if ($successes['default']){
+			$this->saved = true;
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	public function update(){

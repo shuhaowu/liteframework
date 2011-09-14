@@ -11,4 +11,9 @@ php52_support and download those, or download the versions (in tags) tagged with
 v0.5.2.x. The PHP 5.2 framework doesn't have a model component as it's too
 difficult to develop for.
 
+Warning: The current master branch is not ready for production yet as I'm still
+coding away at the orm part of the framework. However, if you do not need the
+ORM, you could use the php52_support branch. An upgrade to the most current
+version when it's ready shouldn't cause an issue.
+
 Documentation coming soon.
